@@ -1,0 +1,28 @@
+<table>
+    <tbody>
+    <tr>
+        <td width="150" valign="top" style="word-break: break-all;" align="{{ header_list[0].align }}">
+            <span style="font-size: 15px;"><strong>{{ header_list[0].text }}<br></strong></span>
+        </td>
+        <td width="385" valign="top" style="word-break: break-all;" align="{{ header_list[1].align }}">
+            <span style="font-size: 15px;"><strong>{{ header_list[1].text }}</strong></span>
+        </td>
+    </tr>
+    {%- for detail in detail_list -%}
+    {%- if detail.is_left == True -%}
+    <tr>
+        <td width="150" valign="top" style="word-break: break-all;" align="{{ detail.align }}">
+            <span style="color: rgb(255, 64, 129);">
+                <strong><span style="font-size: 14px;">{{ detail.text }}</span></strong>
+            </span>
+        </td>
+        {%- else -%}
+        <td width="385" valign="top" style="word-break: break-all;" align="{{ detail.align }}">
+            <span style="font-size: 14px;">{{ detail.text }}</span>
+        </td>
+    </tr>
+    {%- endif -%}
+    {%- endfor -%}
+    </tbody>
+</table>
+
