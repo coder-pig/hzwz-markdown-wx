@@ -69,7 +69,7 @@ if __name__ == '__main__':
                 file_name = split_list[-1]
                 print("读取文件 →", file_name)
                 file_content = cp_utils.read_file_content(md_path)
-                print("渲染文件 →", file_name)
+                print("使用 === {}主题 === 渲染文件 → {}".format(theme, file_name))
                 wx_file_path = os.path.join(wx_dir, file_name.replace(".md", ".html"))
                 print("输出文件 →", wx_file_path)
                 cp_utils.write_file(transform(file_content), wx_file_path)
