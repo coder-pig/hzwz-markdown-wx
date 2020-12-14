@@ -35,7 +35,7 @@ class CpPythonSpiderRenderer(mistune.HTMLRenderer):
         super().__init__()
         # 创建一个包加载器对象(也可以使用PackageLoader包加载器的方式加载)
         self.env = Environment(
-            loader=FileSystemLoader(os.path.join(os.getcwd(), 'theme/{}/templates'.format('cp_python_spider'))))
+            loader=FileSystemLoader(os.path.join(os.getcwd(), 'theme/{}/templates'.format('cp_python_spider_wx'))))
         # 加载各类模板
         self.h2_template = self.env.get_template('h2.html')
         self.h3_template = self.env.get_template('h3.html')
@@ -96,11 +96,13 @@ class CpPythonSpiderRenderer(mistune.HTMLRenderer):
             if len(spans) > 0:
                 for span in spans:
                     text_result += self.blockquote_template.render(text=span.text)
+            print(text_result[:-4] if text_result.endswith("<br>") else text_result)
             return text_result
         render_result = self.blockquote_template.render(text=text)
         if is_ul:
             render_result = render_result.replace('<span style="letter-spacing: 1px; margin-left: 0.5em"><ul', "<ul")
             render_result = render_result.replace('</ul></span>', "</ul>")
+
         return render_result
 
     # 段落

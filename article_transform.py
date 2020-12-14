@@ -10,49 +10,18 @@
 """
 import os.path
 
-import mistune
-from mistune.plugins import plugin_table
-
 import config_getter
 import cp_utils
-from theme.cp_python_spider.renderer import CpPythonSpiderRenderer
+from theme.renderer_utils import renderer_theme
 
-# 读取配置
-theme = config_getter.get_config("Theme", 'theme')  # 获取主题
-wx_dir = os.path.join(os.getcwd(), config_getter.get_config("Theme", "wx_dir"))
+theme_list = config_getter.get_config("Theme", 'theme').split(',')  # 主题列表
+out_dir = os.path.join(os.getcwd(), config_getter.get_config("Theme", "out_dir"))
 md_dir = os.path.join(os.getcwd(), config_getter.get_config("Theme", "md_dir"))
-
-# 头尾样式代码
-header_renderer = None
-footer_renderer = None
-
-
-# 转换渲染
-def transform(md_content):
-    global header_renderer, footer_renderer
-    renderer = None
-    if theme == 'cp_python_spider':
-        renderer = CpPythonSpiderRenderer()
-        header_renderer = renderer.header_render()
-        footer_renderer = renderer.footer_render()
-    else:
-        renderer = CpPythonSpiderRenderer()
-    renderer_result = mistune.create_markdown(renderer=renderer, plugins=[plugin_table])(md_content) \
-        .replace("\n", "") \
-        .replace("<br><section><br>", "<br><section>") \
-        .replace("<br><br>", "<br>") \
-        .replace("\u200b", "")
-    if header_renderer is not None:
-        renderer_result = header_renderer + renderer_result
-    if footer_renderer is not None:
-        renderer_result += footer_renderer
-    return renderer_result
-
 
 if __name__ == '__main__':
     # 相关文件夹初始化
     cp_utils.is_dir_existed(md_dir)
-    cp_utils.is_dir_existed(wx_dir)
+    cp_utils.is_dir_existed(out_dir)
     # 判断目录中是否有md文件
     file_path_list = cp_utils.fetch_all_file(md_dir)
     md_path_list = []
@@ -69,7 +38,9 @@ if __name__ == '__main__':
                 file_name = split_list[-1]
                 print("读取文件 →", file_name)
                 file_content = cp_utils.read_file_content(md_path)
-                print("使用 === {}主题 === 渲染文件 → {}".format(theme, file_name))
-                wx_file_path = os.path.join(wx_dir, file_name.replace(".md", ".html"))
-                print("输出文件 →", wx_file_path)
-                cp_utils.write_file(transform(file_content), wx_file_path)
+                for theme in theme_list:
+                    print("使用 === {}主题 === 渲染文件 → {}".format(theme, file_name))
+                    out_file_path = os.path.join(out_dir, file_name.replace(".md", "_{}.html".format(theme)))
+                    print("输出文件 →", out_file_path)
+                    renderer_content = renderer_theme(file_content, theme)
+                    cp_utils.write_file(renderer_content, out_file_path)
