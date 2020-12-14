@@ -10,6 +10,8 @@
 """
 import mistune
 from mistune.plugins import plugin_table
+
+from theme.cp_kotlin_course_wx.renderer import KotlinRenderer
 from theme.cp_python_spider_wx.renderer import CpPythonSpiderRenderer
 from theme.default.renderer import DefaultRenderer
 
@@ -31,4 +33,8 @@ def renderer_theme(md_content, theme):
             renderer_result = header_renderer + renderer_result
         if footer_renderer is not None:
             renderer_result += footer_renderer
+        return renderer_result
+    elif theme == 'cp_kotlin_course':
+        renderer = KotlinRenderer()
+        renderer_result = mistune.create_markdown(renderer=renderer)(md_content)
         return renderer_result

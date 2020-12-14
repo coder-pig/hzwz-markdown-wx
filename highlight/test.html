@@ -1,0 +1,37 @@
+<html>
+<head>
+    <title>highlight实现代码高亮</title>
+    <link rel="stylesheet" type="text/css" href="styles/androidstudio.css"/>
+</head>
+<body>
+<code class="hljs">
+    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-built_in">byte</span>[] <span class="hljs-title">loadIndexes</span>(<span class="hljs-params">Context context</span>)</span> {
+        <span class="hljs-built_in">byte</span>[] indexes = <span class="hljs-literal">null</span>;
+
+        InputStream <span class="hljs-keyword">is</span> = <span class="hljs-literal">null</span>;
+        <span class="hljs-keyword">try</span> {
+            <span class="hljs-keyword">is</span> = context.getAssets().open(ASSET);
+
+            indexes = <span class="hljs-keyword">new</span> <span class="hljs-built_in">byte</span>[(END - START + <span class="hljs-number">1</span>) * <span class="hljs-number">2</span>];
+
+            <span class="hljs-keyword">is</span>.read(indexes);
+        } catch (Throwable tr) {
+            PartnerLogger.d(tr.getMessage());
+
+            indexes = <span class="hljs-literal">null</span>;
+        } <span class="hljs-keyword">finally</span> {
+            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">is</span> != <span class="hljs-literal">null</span>) {
+                <span class="hljs-keyword">try</span> {
+                    <span class="hljs-keyword">is</span>.close();
+                } catch (IOException e) {
+                    PartnerLogger.d(e.getMessage());
+                }
+            }
+        }
+
+        <span class="hljs-keyword">return</span> indexes;
+    }
+</code>
+
+</body>
+</html>

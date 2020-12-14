@@ -5,7 +5,7 @@
    File     : CpPythonSpiderRenderer.py
    Author   : CoderPig
    date     : 2020-11-27 14:13 
-   Desc     : 抠腚男孩 → 公号样式 → https://mp.weixin.qq.com/s/why-ikTbbiCG4uzGer48IQ
+   Desc     : 抠腚男孩 → Python爬虫系列样式 → https://mp.weixin.qq.com/s/why-ikTbbiCG4uzGer48IQ
 -------------------------------------------------
 """
 import os

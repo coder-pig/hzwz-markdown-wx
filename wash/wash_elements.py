@@ -28,7 +28,9 @@ def write_file(content, file_path):
 
 # 过滤无用属性值
 pattern_str_list = [
+    r'data-tool=".*?"',
     r'data-tools=".*?"',
+    r'data-website=".*?"',
     r'data-id=".*?"',
     r'class=".*?"',
     r'id=".*?"',
