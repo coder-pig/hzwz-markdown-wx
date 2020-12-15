@@ -1,292 +1,299 @@
-<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MultiUploadTask</span></span>(context: Context) {
-    <span class="hljs-keyword">private</span> <span class="hljs-keyword">var</span> mContext: Context? = context
-    <span class="hljs-keyword">private</span> <span class="hljs-keyword">var</span> isUploadFlag: <span class="hljs-built_in">Boolean</span> = <span class="hljs-literal">true</span>    <span class="hljs-comment">// 是否允许上传</span>
-    <span class="hljs-keyword">private</span> <span class="hljs-keyword">var</span> mUploadResultListener = <span class="hljs-keyword">object</span> : UploadResultListener {
-        <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">onSuccess</span><span class="hljs-params">()</span></span> {}
+<span class="hljs-keyword">package</span> com.qitianzhen.skradio.ui.index
 
-        <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">onFailed</span><span class="hljs-params">()</span></span> {
-            EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_FAILURE))
+<span class="hljs-keyword">import</span> android.content.Context
+<span class="hljs-keyword">import</span> android.content.Intent
+<span class="hljs-keyword">import</span> android.view.LayoutInflater
+<span class="hljs-keyword">import</span> android.view.View
+<span class="hljs-keyword">import</span> android.view.ViewGroup
+<span class="hljs-keyword">import</span> android.widget.ImageView
+<span class="hljs-keyword">import</span> androidx.cardview.widget.CardView
+<span class="hljs-keyword">import</span> androidx.recyclerview.widget.RecyclerView
+<span class="hljs-keyword">import</span> com.bumptech.glide.Glide
+<span class="hljs-keyword">import</span> com.bumptech.glide.load.resource.bitmap.RoundedCorners
+<span class="hljs-keyword">import</span> com.bumptech.glide.request.RequestOptions
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.R
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.<span class="hljs-keyword">data</span>.Banner
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.<span class="hljs-keyword">data</span>.IndexDataResult
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.<span class="hljs-keyword">data</span>.MusicMenu
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.<span class="hljs-keyword">data</span>.VideoAlbum
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.entity.CategoryMenu
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.ui.featured.FeaturedVideoActivity
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.ui.featured.VideoPlayerActivity
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.ui.music.MusicListActivity
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.ui.music.MusicListDetailActivity
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.ui.okya.lesson.OkyaActivity
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.ui.qtz.QtzMusicActivity
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.utils.dp2px
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.utils.getTextRes
+<span class="hljs-keyword">import</span> com.qitianzhen.skradio.widget.EnTextView
+<span class="hljs-keyword">import</span> kotlinx.android.synthetic.main.item_index_banner.view.*
+
+
+<span class="hljs-comment">/**
+ * <span class="hljs-doctag">@Author</span> CoderPig
+ * <span class="hljs-doctag">@Desc</span>: 首页Adapter
+ * <span class="hljs-doctag">@CreateDate</span>: Create in 2020-01-16 14:39
+ */</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">IndexAdapter</span></span>(<span class="hljs-keyword">var</span> context: Context)  : RecyclerView.Adapter&lt;RecyclerView.ViewHolder&gt;()  {
+    <span class="hljs-keyword">companion</span> <span class="hljs-keyword">object</span> {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">const</span> <span class="hljs-keyword">val</span> BANNER_ITEM = <span class="hljs-number">0</span>    <span class="hljs-comment">// Banner</span>
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">const</span> <span class="hljs-keyword">val</span> QZT_ITEM = <span class="hljs-number">1</span>    <span class="hljs-comment">// 七田真专区</span>
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">const</span> <span class="hljs-keyword">val</span> GROWTH_ITEM = <span class="hljs-number">2</span>    <span class="hljs-comment">// 成长频道</span>
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">const</span> <span class="hljs-keyword">val</span> OKYA_ITEM = <span class="hljs-number">3</span>    <span class="hljs-comment">// 成长频道</span>
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">const</span> <span class="hljs-keyword">val</span> VIDEO_ITEM = <span class="hljs-number">4</span>    <span class="hljs-comment">// 精彩视频</span>
+    }
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">var</span> mData: IndexDataResult = IndexDataResult(<span class="hljs-literal">null</span>,<span class="hljs-literal">null</span>,<span class="hljs-literal">null</span>,<span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, <span class="hljs-string">&quot;&quot;</span>,<span class="hljs-string">&quot;&quot;</span>)
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">var</span> currentType = BANNER_ITEM    <span class="hljs-comment">// 当前Item</span>
+
+    <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">refresh</span><span class="hljs-params">(<span class="hljs-keyword">data</span>: <span class="hljs-type">IndexDataResult</span>)</span></span> {
+        mData = <span class="hljs-keyword">data</span>
+        notifyDataSetChanged()
+    }
+
+    <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">onCreateViewHolder</span><span class="hljs-params">(parent: <span class="hljs-type">ViewGroup</span>, viewType: <span class="hljs-type">Int</span>)</span></span>: RecyclerView.ViewHolder {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">when</span>(viewType) {
+            QZT_ITEM -&gt; QtzViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_qtz, parent, <span class="hljs-literal">false</span>))
+            GROWTH_ITEM -&gt; GrowthViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_growth, parent, <span class="hljs-literal">false</span>))
+            OKYA_ITEM -&gt; OKYAViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_okya, parent, <span class="hljs-literal">false</span>))
+            VIDEO_ITEM -&gt; VideoViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_video, parent, <span class="hljs-literal">false</span>))
+            <span class="hljs-keyword">else</span> -&gt; BannerViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_banner, parent, <span class="hljs-literal">false</span>))
         }
     }
 
-    <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">stopUploadFiles</span><span class="hljs-params">()</span></span> {
-        isUploadFlag = <span class="hljs-literal">false</span>
+    <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">onBindViewHolder</span><span class="hljs-params">(holder: <span class="hljs-type">RecyclerView</span>.<span class="hljs-type">ViewHolder</span>, position: <span class="hljs-type">Int</span>)</span></span> {
+        <span class="hljs-keyword">when</span>(position) {
+            BANNER_ITEM -&gt; { mData.banners?.let { (holder <span class="hljs-keyword">as</span> BannerViewHolder).bind(it) } }
+            QZT_ITEM -&gt; { mData.tpiMusicMenuRes?.let { (holder <span class="hljs-keyword">as</span> QtzViewHolder).bind(mData.tpiImageUrl) } }
+            GROWTH_ITEM -&gt; { mData.musicMenuRes?.let { (holder <span class="hljs-keyword">as</span> GrowthViewHolder).bind(it) } }
+            OKYA_ITEM -&gt; {  (holder <span class="hljs-keyword">as</span> OKYAViewHolder).bind(mData.okyaManageImageUrl)  }
+            VIDEO_ITEM -&gt; { mData.videoAlbums?.let { (holder <span class="hljs-keyword">as</span> VideoViewHolder).bind(it) } }
+        }
     }
 
-    <span class="hljs-comment">/**
-     * 上传单个文件
-     * [path] 文件路径
-     * [md5] 文件md5
-     * */</span>
-    <span class="hljs-keyword">private</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">uploadFile</span><span class="hljs-params">(path: <span class="hljs-type">String</span>, md5: <span class="hljs-type">String</span>?)</span></span> {
-        <span class="hljs-keyword">val</span> file = File(path)
-        <span class="hljs-keyword">val</span> fileName = file.name
-        <span class="hljs-keyword">val</span> fileType = <span class="hljs-keyword">if</span> (fileName.indexOf(<span class="hljs-string">&quot;.&quot;</span>) != -<span class="hljs-number">1</span>) fileName.substring(fileName.lastIndexOf(<span class="hljs-string">&quot;.&quot;</span>)) <span class="hljs-keyword">else</span> <span class="hljs-string">&quot;.jpg&quot;</span>
-        <span class="hljs-keyword">val</span> requestFile = RequestBody.create(MediaType.parse(<span class="hljs-string">&quot;multipart/form-data&quot;</span>), file)
-        <span class="hljs-keyword">val</span> body = MultipartBody.Part.createFormData(<span class="hljs-string">&quot;file&quot;</span>, <span class="hljs-string">&quot;<span class="hljs-subst">${md5}</span><span class="hljs-subst">${fileType}</span>&quot;</span>, requestFile)
-        MultiUploadManager.uploadFile(body)
-                .subscribe(<span class="hljs-keyword">object</span> : CallBack1&lt;HashMap&lt;String, String&gt;&gt;() {
-                    <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">onResponses</span><span class="hljs-params">(response: <span class="hljs-type">Response</span>&lt;<span class="hljs-type">Bean</span>&lt;<span class="hljs-type">HashMap</span>&lt;<span class="hljs-type">String</span>, String&gt;&gt;&gt;?)</span></span> {
-                        response?.body()?.apply {
-                            isSuccess trueLet {
-                                EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_SUCCESS, UrlList(<span class="hljs-keyword">data</span>.keys.toList()[<span class="hljs-number">0</span>], <span class="hljs-keyword">data</span>.values.toList()[<span class="hljs-number">0</span>])))
-                                mUploadResultListener.onSuccess()
-                            } elseLet {
-                                mUploadResultListener.onFailed()
-                            }
-                        }
-                    }
-
-                    <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">onFailures</span><span class="hljs-params">(nono: <span class="hljs-type">NonoException</span>?)</span></span> {
-                        nono?.let {
-                            it.message?.let { msg -&gt; PartnerLogger.d(msg) }
-                            (it <span class="hljs-keyword">is</span> SocketTimeoutException) trueLet {
-                                EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_FAILURE, UrlList(md5, path)))
-                                stopUploadFiles()
-                            } elseLet {
-                                EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_FAILURE, UrlList(md5, path)))
-                            }
-                            mUploadResultListener.onFailed()
-                        }
-                    }
-                })
+    <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">getItemViewType</span><span class="hljs-params">(position: <span class="hljs-type">Int</span>)</span></span>: <span class="hljs-built_in">Int</span> {
+        <span class="hljs-keyword">when</span>(position) {
+            BANNER_ITEM -&gt; currentType = BANNER_ITEM
+            QZT_ITEM -&gt; currentType = QZT_ITEM
+            GROWTH_ITEM -&gt; currentType = GROWTH_ITEM
+            OKYA_ITEM -&gt; currentType = OKYA_ITEM
+            VIDEO_ITEM -&gt; currentType = VIDEO_ITEM
+        }
+        <span class="hljs-keyword">return</span> currentType
     }
 
-    <span class="hljs-comment">/**
-     * 上传多张普通图片
-     * [data] 图片路径列表
-     * [isCompress] 是否压缩上传，默认true
-     * [compress] 压缩比例，默认80
-     * */</span>
-    <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">uploadPictures</span><span class="hljs-params">(<span class="hljs-keyword">data</span>: <span class="hljs-type">ArrayList</span>&lt;<span class="hljs-type">String</span>&gt;, isCompress: <span class="hljs-type">Boolean</span> = <span class="hljs-literal">true</span>, compress: <span class="hljs-type">Int</span> = <span class="hljs-number">80</span>)</span></span> {
-        <span class="hljs-keyword">val</span> uploadUrlList = ArrayList&lt;UrlList&gt;()
-        isUploadFlag trueLet {
-            EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_BEGIN))
-            <span class="hljs-keyword">data</span>.takeIf { it.isNotEmpty() }.apply {
-                <span class="hljs-comment">// 批量相片旋转摆正</span>
-                <span class="hljs-keyword">data</span>.forEach {
-                    <span class="hljs-keyword">val</span> degree = readPictureDegree(it)
-                    (degree != <span class="hljs-number">0</span>) trueLet { rotateToDegrees(it, degree.toFloat()) }
-                }
-                <span class="hljs-comment">// 批量压缩</span>
-                isCompress trueLet {
-                    <span class="hljs-keyword">val</span> tempUrlList = ArrayList&lt;CompressBean&gt;()
-                    <span class="hljs-keyword">data</span>.forEach { url -&gt;
-                        <span class="hljs-keyword">val</span> tag = url.substring(url.lastIndexOf(<span class="hljs-string">&quot;/&quot;</span>))
-                        <span class="hljs-keyword">val</span> tempPath = CommonContext.getInstance().recvTempPath.absolutePath + tag
-                        tempUrlList.add(CompressBean(url, tempPath))
-                    }
-                    MultiUploadManager.compressPictures(tempUrlList)
-                            .flatMap {
-                                <span class="hljs-comment">// 批量压缩</span>
-                                <span class="hljs-keyword">val</span> checkMD5Req = CheckMD5Req(ArrayList())
-                                tempUrlList.forEach {
-                                    compressImage(getLocalImage(File(it.oldPath)), File(it.newPath), compress)
-                                    uploadUrlList.add(UrlList(makeFileMD5Str(it.oldPath), it.oldPath))
-                                }
-                                checkMD5Req.md5Array = uploadUrlList.map { it.md5 }.toMutableList() <span class="hljs-keyword">as</span> ArrayList&lt;String&gt;
-                                <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> MultiUploadManager.checkMD5(checkMD5Req)
-                            }.flatMap { result -&gt;
-                                <span class="hljs-comment">// md5校验</span>
-                                <span class="hljs-keyword">if</span> (result.isSuccessful) {
-                                    <span class="hljs-keyword">val</span> urlList = result.body().<span class="hljs-keyword">data</span>.urlList
-                                    urlList.takeIf { it != <span class="hljs-literal">null</span> }!!.forEach { uploadUrlList.forEach { uploadUrl -&gt; <span class="hljs-keyword">if</span> (uploadUrl.md5 == it.md5) uploadUrl.url = it.url } }
-                                    <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> Observable.from(uploadUrlList).subscribeOn(Schedulers.io()).observeOn(Schedulers.io())
-                                } <span class="hljs-keyword">else</span> {
-                                    <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> Observable.error&lt;UrlList&gt;(MD5CheckException(<span class="hljs-keyword">data</span>))
-                                }
-                            }.observeOn(AndroidSchedulers.mainThread()).subscribe({ urlList -&gt;
-                                EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_START, UrlList(urlList.md5, urlList.url)))
-                                urlList.url?.let { url -&gt;
-                                    url.startsWith(<span class="hljs-string">&quot;http&quot;</span>) trueLet {<span class="hljs-comment">// 上传过，秒传</span>
-                                        EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_SUCCESS, UrlList(urlList.md5, url)))
-                                    } elseLet { uploadFile(urlList.url!!, urlList.md5!!) }
-                                }
-                            }, {
-                                <span class="hljs-keyword">when</span> (it) {
-                                    <span class="hljs-keyword">is</span> MD5CheckException -&gt; EventBus.getDefault().postSticky(MD5CheckFailureEvent(it.urlList))
-                                    <span class="hljs-keyword">else</span> -&gt; it.message?.let { msg -&gt; PartnerLogger.d(msg) }
-                                }
-                            })
-                } elseLet {
-                    <span class="hljs-comment">// 上传原图</span>
-                    <span class="hljs-keyword">data</span>.forEach { uploadUrlList.add(UrlList(makeFileMD5Str(it), it)) }
-                    <span class="hljs-keyword">val</span> checkMD5Req = CheckMD5Req(uploadUrlList.map { it.md5 }.toMutableList() <span class="hljs-keyword">as</span> ArrayList&lt;String&gt;)
-                    MultiUploadManager.checkMD5(checkMD5Req).flatMap { result -&gt;
-                        <span class="hljs-comment">// md5校验</span>
-                        result.body().isSuccess trueLet {
-                            <span class="hljs-keyword">val</span> urlList = result.body().<span class="hljs-keyword">data</span>.urlList
-                            urlList.takeIf { it != <span class="hljs-literal">null</span> }!!.forEach { uploadUrlList.forEach { uploadUrl -&gt; <span class="hljs-keyword">if</span> (uploadUrl.md5 == it.md5) uploadUrl.url = it.url } }
-                            EventBus.getDefault().postSticky(MD5CheckEvent(CHECK_MD5_SUCCESS))
-                        } elseLet {
-                            EventBus.getDefault().postSticky(MD5CheckEvent(CHECK_MD5_FAILURE))
-                        }
-                        <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> Observable.from(uploadUrlList)
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                    }.subscribe({ urlList -&gt;
-                        EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_START, UrlList(urlList.md5, urlList.url)))
-                        urlList.url?.let { url -&gt;
-                            url.startsWith(<span class="hljs-string">&quot;http&quot;</span>) trueLet {
-                                EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_SUCCESS, UrlList(urlList.md5, url)))
-                            } elseLet { uploadFile(urlList.url!!, urlList.md5!!) }
-                        }
-                    }, {
-                        it.message?.let { msg -&gt; PartnerLogger.d(msg) }
-<span class="hljs-comment">//                        uploadUrlList.forEach {urlList -&gt;</span>
-<span class="hljs-comment">//                            EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_FAILURE, UrlList(urlList.md5, urlList.url)))</span>
-<span class="hljs-comment">//                        }</span>
-                    })
+    <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">getItemCount</span><span class="hljs-params">()</span></span>: <span class="hljs-built_in">Int</span> = <span class="hljs-number">5</span>
+
+    <span class="hljs-keyword">inner</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BannerViewHolder</span></span>(view: View): RecyclerView.ViewHolder(view) {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_banner = view.iv_banner
+
+        <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">bind</span><span class="hljs-params">(<span class="hljs-keyword">data</span>: <span class="hljs-type">ArrayList</span>&lt;<span class="hljs-type">Banner</span>&gt;)</span></span> {
+            <span class="hljs-keyword">if</span>(<span class="hljs-keyword">data</span>.size &gt; <span class="hljs-number">0</span>) {
+                Glide.with(context).load(<span class="hljs-keyword">data</span>[<span class="hljs-number">0</span>].imageUrl)
+                    .apply(RequestOptions.bitmapTransform(RoundedCorners(dp2px(<span class="hljs-number">24.0f</span>))))
+                    .into(iv_banner)
+                iv_banner.setOnClickListener {
+                    <span class="hljs-keyword">val</span> intent = Intent(context, BannerDetailActivity::<span class="hljs-keyword">class</span>.java)
+                    intent.putExtra(<span class="hljs-string">&quot;detailImageUrls&quot;</span>, <span class="hljs-keyword">data</span>[<span class="hljs-number">0</span>].detailImageUrls)
+                    context.startActivity(intent)
                 }
             }
-        } elseLet {
-            EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_STOP))
         }
     }
 
+    <span class="hljs-keyword">inner</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">QtzViewHolder</span></span>(view: View): RecyclerView.ViewHolder(view) {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_cover)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_more_right = view.findViewById&lt;ImageView&gt;(R.id.iv_more_right)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_title)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_sub_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_sub_title)
 
-    <span class="hljs-comment">/**
-     * 视频上传
-     * [videoPath] 本地视频路径
-     * 流程：压缩视频 → 生成第一帧 → 校验MD5 → 上传视频 → 上传第一帧 → 通知视频上传成功
-     * */</span>
-    <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">uploadVideo</span><span class="hljs-params">(videoPath: <span class="hljs-type">String</span>)</span></span> {
-        <span class="hljs-keyword">val</span> uploadVideoEvent = UploadVideoEvent() <span class="hljs-comment">// 视频上传Event</span>
-        <span class="hljs-keyword">val</span> videoFile = File(videoPath) <span class="hljs-comment">// 原视频文件</span>
-        <span class="hljs-keyword">var</span> compressVideoFile: File? = <span class="hljs-literal">null</span>   <span class="hljs-comment">// 压缩视频文件</span>
-        <span class="hljs-keyword">var</span> compressVideoPath: String? = <span class="hljs-string">&quot;&quot;</span>   <span class="hljs-comment">// 压缩视频路径</span>
-        <span class="hljs-keyword">var</span> compressVideoMD5: String? = <span class="hljs-string">&quot;&quot;</span>   <span class="hljs-comment">// 压缩视频MD5</span>
-        <span class="hljs-keyword">val</span> tag = videoPath.substring(videoPath.lastIndexOf(<span class="hljs-string">&quot;/&quot;</span>)) <span class="hljs-comment">// 获取第一帧文件名</span>
-        <span class="hljs-keyword">val</span> videoFrameFile = File(CommonContext.getInstance().recvTempPath.absolutePath + tag) <span class="hljs-comment">// 第一帧文件</span>
-        <span class="hljs-keyword">var</span> videoFramePath = videoFrameFile.absolutePath    <span class="hljs-comment">// 第一帧路径</span>
-        <span class="hljs-keyword">var</span> videoFrameMD5: String? = <span class="hljs-string">&quot;&quot;</span> <span class="hljs-comment">// 第一帧MD5</span>
-        <span class="hljs-keyword">if</span> (videoFile.exists()) {
-            EventBus.getDefault().postSticky(UploadVideoEvent(MultiUploadConstants.UPLOAD_VIDEO_START, videoPath))
-            Observable.just(videoPath)
-                    .subscribeOn(AndroidSchedulers.mainThread())
-                    .observeOn(Schedulers.io())
-                    .flatMap {
-                        <span class="hljs-comment">// 压缩视频</span>
-                        compressVideoPath = SiliCompressor.with(mContext).compressVideo(videoPath, getExternalVideoPath(), <span class="hljs-number">1280</span>, <span class="hljs-number">720</span>, <span class="hljs-number">1500000</span>)
-                        compressVideoFile = File(compressVideoPath)
-                        compressVideoMD5 = makeFileMD5Str(compressVideoPath!!)
-                        uploadVideoEvent.videoPath = compressVideoPath
-                        uploadVideoEvent.videoMD5 = compressVideoMD5
-                        Observable.just(compressVideoPath)
-                    }.observeOn(Schedulers.io())
-                    .flatMap {
-                        <span class="hljs-comment">// 生成视频第一帧</span>
-                        <span class="hljs-keyword">val</span> mmr = MediaMetadataRetriever()
-                        mmr.setDataSource(compressVideoPath!!)
-                        <span class="hljs-keyword">val</span> frameBitmap = mmr.frameAtTime
-                        compressImage(frameBitmap, videoFrameFile, <span class="hljs-number">80</span>)
-                        videoFrameMD5 = makeFileMD5Str(videoFramePath)
-                        uploadVideoEvent.thumbPath = videoFramePath
-                        uploadVideoEvent.thumbMD5 = videoFrameMD5
-                        MultiUploadManager.checkMD5(CheckMD5Req(arrayListOf(compressVideoMD5!!, videoFrameMD5!!)))
-                    }.observeOn(Schedulers.io())
-                    .flatMap {
-                        <span class="hljs-keyword">if</span> (it.isSuccessful) {
-                            <span class="hljs-comment">// 压缩视频及第一帧MD5核验</span>
-                            it?.body()?.<span class="hljs-keyword">data</span>?.urlList?.apply {
-                                forEach { urlList -&gt;
-                                    <span class="hljs-keyword">if</span> (urlList.md5 == compressVideoMD5) {
-                                        compressVideoPath = urlList.url
-                                        uploadVideoEvent.videoPath = compressVideoPath
-                                    }
-                                    <span class="hljs-keyword">if</span> (urlList.md5 == videoFrameMD5) {
-                                        videoFramePath = urlList.url
-                                        uploadVideoEvent.thumbPath = videoFramePath
-                                    }
-                                }
-                            }
-                            <span class="hljs-comment">// 上传视频</span>
-                            <span class="hljs-keyword">if</span> (!compressVideoPath!!.startsWith(<span class="hljs-string">&quot;http&quot;</span>)) {
-                                <span class="hljs-comment">// 服务器不存在此视频</span>
-                                <span class="hljs-keyword">val</span> requestFile = RequestBody.create(MediaType.parse(<span class="hljs-string">&quot;multipart/form-data&quot;</span>), compressVideoFile!!)
-                                <span class="hljs-keyword">val</span> body = MultipartBody.Part.createFormData(<span class="hljs-string">&quot;file&quot;</span>, <span class="hljs-string">&quot;<span class="hljs-subst">${compressVideoMD5}</span>.mp4&quot;</span>, requestFile)
-                                <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> MultiUploadManager.uploadFile(body)
-                            } <span class="hljs-keyword">else</span> {
-                                <span class="hljs-comment">// 服务器已存在此视频，上传第一帧</span>
-                                <span class="hljs-keyword">if</span> (!videoFramePath.startsWith(<span class="hljs-string">&quot;http&quot;</span>)) {
-                                    <span class="hljs-comment">// 服务器不存在第一帧</span>
-                                    <span class="hljs-keyword">val</span> requestFile = RequestBody.create(MediaType.parse(<span class="hljs-string">&quot;multipart/form-data&quot;</span>), videoFrameFile)
-                                    <span class="hljs-keyword">val</span> body = MultipartBody.Part.createFormData(<span class="hljs-string">&quot;file&quot;</span>, <span class="hljs-string">&quot;<span class="hljs-subst">${videoFrameMD5}</span>.jpg&quot;</span>, requestFile)
-                                    <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> MultiUploadManager.uploadFile(body)
-                                } <span class="hljs-keyword">else</span> {
-                                    <span class="hljs-comment">// 服务器已存在第一帧，跳过上传</span>
-                                    <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> Observable.error&lt;String&gt;(UpLoadFinish(UPLOAD_VIDEO_SUCCESS))
-                                }
-                            }
-                        } <span class="hljs-keyword">else</span> {
-                            <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> Observable.error&lt;UrlList&gt;(MD5CheckException(arrayListOf(videoPath)))
-                        }
-                    }.observeOn(Schedulers.io())
-                    .flatMap {
-                        <span class="hljs-keyword">val</span> result = it <span class="hljs-keyword">as</span> Response&lt;Bean&lt;HashMap&lt;String, String&gt;&gt;&gt;
-                        <span class="hljs-keyword">if</span> (result.isSuccessful) {
-                            <span class="hljs-keyword">val</span> url = result.body().<span class="hljs-keyword">data</span>.values.toList()[<span class="hljs-number">0</span>]
-                            <span class="hljs-comment">// 判断视频上传的回调，是开始上传第一帧，否则为第一帧回调</span>
-                            <span class="hljs-keyword">if</span> (url.endsWith(<span class="hljs-string">&quot;.mp4&quot;</span>)) {
-                                compressVideoPath = url
-                                uploadVideoEvent.videoPath = compressVideoPath
-                                <span class="hljs-comment">// 判断服务器上是否已有第一帧</span>
-                                <span class="hljs-keyword">if</span> (!videoFramePath.startsWith(<span class="hljs-string">&quot;http&quot;</span>)) {
-                                    <span class="hljs-comment">// 不存在第一帧</span>
-                                    <span class="hljs-keyword">val</span> requestFile = RequestBody.create(MediaType.parse(<span class="hljs-string">&quot;multipart/form-data&quot;</span>), videoFrameFile)
-                                    <span class="hljs-keyword">val</span> body = MultipartBody.Part.createFormData(<span class="hljs-string">&quot;file&quot;</span>, <span class="hljs-string">&quot;<span class="hljs-subst">${videoFrameMD5}</span>.jpg&quot;</span>, requestFile)
-                                    <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> MultiUploadManager.uploadFile(body)
-                                } <span class="hljs-keyword">else</span> {
-                                    <span class="hljs-comment">// 服务器已存在第一帧，跳过上传</span>
-                                    <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> Observable.error&lt;String&gt;(UpLoadFinish(UPLOAD_VIDEO_SUCCESS))
-                                }
-                            } <span class="hljs-keyword">else</span> {
-                                <span class="hljs-comment">// 第一帧的回调</span>
-                                videoFramePath = url
-                                uploadVideoEvent.thumbPath = url
-                                <span class="hljs-comment">// 服务器已存在第一帧，跳过上传</span>
-                                <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> Observable.error&lt;String&gt;(UpLoadFinish(UPLOAD_VIDEO_SUCCESS))
-                            }
-                        } <span class="hljs-keyword">else</span> {
-                            <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> Observable.error&lt;String&gt;(UpLoadFinish(UPLOAD_VIDEO_FAILURE))
-                        }
-                    }.observeOn(Schedulers.io())
-                    .flatMap {
-                        <span class="hljs-keyword">val</span> result = it <span class="hljs-keyword">as</span> Response&lt;Bean&lt;HashMap&lt;String, String&gt;&gt;&gt;
-                        <span class="hljs-keyword">if</span> (result.isSuccessful) {
-                            <span class="hljs-keyword">val</span> url = result.body().<span class="hljs-keyword">data</span>.values.toList()[<span class="hljs-number">0</span>]
-                            <span class="hljs-comment">// 第一帧的回调</span>
-                            videoFramePath = url
-                            uploadVideoEvent.thumbPath = url
-                            <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> Observable.error&lt;String&gt;(UpLoadFinish(UPLOAD_VIDEO_SUCCESS))
-                        } <span class="hljs-keyword">else</span> {
-                            <span class="hljs-keyword">return</span><span class="hljs-symbol">@flatMap</span> Observable.error&lt;String&gt;(UpLoadFinish(UPLOAD_VIDEO_FAILURE))
-                        }
-                    }.observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({}, {
-                        <span class="hljs-keyword">when</span> (it) {
-                            <span class="hljs-keyword">is</span> MD5CheckException -&gt; EventBus.getDefault().postSticky(MD5CheckFailureEvent(it.urlList))
-                            <span class="hljs-keyword">is</span> UpLoadFinish -&gt; {
-                                <span class="hljs-keyword">if</span> (it.uploadStatus == UPLOAD_VIDEO_SUCCESS) {
-                                    EventBus.getDefault().postSticky(uploadVideoEvent.apply { status = UPLOAD_VIDEO_SUCCESS })
-                                } <span class="hljs-keyword">else</span> {
-                                    EventBus.getDefault().postSticky(uploadVideoEvent.apply { status = UPLOAD_VIDEO_FAILURE })
-                                }
-                            }
-                            <span class="hljs-keyword">else</span> -&gt; {
-                                it.message?.let { msg -&gt; PartnerLogger.d(msg) }
-                                EventBus.getDefault().postSticky(uploadVideoEvent.apply { status = UPLOAD_VIDEO_FAILURE })
-                            }
-                        }
-                    })
+        <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">bind</span><span class="hljs-params">(cover: <span class="hljs-type">String</span>)</span></span> {
+            tv_title.text = <span class="hljs-string">&quot;七田真专区&quot;</span>
+            tv_sub_title.text = mData.subTitles?.TPI_MUSIC_MENU_SUBTITLE
+            Glide.with(context).load(cover).into(iv_cover)
+            iv_more_right.setOnClickListener {
+                context.startActivity(Intent(context, QtzMusicActivity::<span class="hljs-keyword">class</span>.java))
+            }
+            iv_cover.setOnClickListener {
+                context.startActivity(Intent(context, QtzMusicActivity::<span class="hljs-keyword">class</span>.java))
+            }
         }
     }
 
-    <span class="hljs-comment">/**
-     * 上传结果回调
-     * */</span>
-    <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">UploadResultListener</span> </span>{
-        <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">onSuccess</span><span class="hljs-params">()</span></span>
-        <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">onFailed</span><span class="hljs-params">()</span></span>
+    <span class="hljs-keyword">inner</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">GrowthViewHolder</span></span>(view: View): RecyclerView.ViewHolder(view) {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_title)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_sub_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_sub_title)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> cv_first = view.findViewById&lt;CardView&gt;(R.id.cv_first)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_first_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_first_cover)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_first_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_first_title)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_first_desc = view.findViewById&lt;EnTextView&gt;(R.id.tv_first_desc)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_first_vip_tag = view.findViewById&lt;ImageView&gt;(R.id.iv_first_vip_tag)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> cv_second = view.findViewById&lt;CardView&gt;(R.id.cv_second)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_second_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_second_cover)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_second_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_second_title)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_second_desc = view.findViewById&lt;EnTextView&gt;(R.id.tv_second_desc)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_second_vip_tag = view.findViewById&lt;ImageView&gt;(R.id.iv_second_vip_tag)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> cv_third = view.findViewById&lt;CardView&gt;(R.id.cv_third)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_third_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_third_cover)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_third_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_third_title)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_third_desc = view.findViewById&lt;EnTextView&gt;(R.id.tv_third_desc)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_third_vip_tag = view.findViewById&lt;ImageView&gt;(R.id.iv_third_vip_tag)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_more_right = view.findViewById&lt;ImageView&gt;(R.id.iv_more_right)
+
+
+        <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">bind</span><span class="hljs-params">(<span class="hljs-keyword">data</span>: <span class="hljs-type">ArrayList</span>&lt;<span class="hljs-type">MusicMenu</span>&gt;)</span></span> {
+            tv_title.text = <span class="hljs-string">&quot;成长歌单&quot;</span>
+            tv_sub_title.text = mData.subTitles?.RECOMMEND_MUSIC_MENU_SUBTITLE
+            iv_more_right.setOnClickListener {
+                context.startActivity(Intent(context, MusicListActivity::<span class="hljs-keyword">class</span>.java))
+            }
+            <span class="hljs-keyword">val</span> dataSize = <span class="hljs-keyword">data</span>.size
+            cv_first.visibility = View.INVISIBLE
+            cv_second.visibility = View.INVISIBLE
+            cv_third.visibility = View.INVISIBLE
+            <span class="hljs-keyword">if</span>(dataSize &gt;= <span class="hljs-number">1</span>) {
+                <span class="hljs-keyword">val</span> musicMenu1 = <span class="hljs-keyword">data</span>[<span class="hljs-number">0</span>]
+                Glide.with(context).load(musicMenu1.coverUrl).into(iv_first_cover)
+                tv_first_title.text = musicMenu1.title
+                tv_first_desc.text = musicMenu1.subTitle
+                cv_first.visibility = View.VISIBLE
+                iv_first_vip_tag.visibility = <span class="hljs-keyword">if</span>(musicMenu1.vipState == <span class="hljs-number">1</span>) View.VISIBLE <span class="hljs-keyword">else</span> View.INVISIBLE
+                cv_first.setOnClickListener {
+                    <span class="hljs-keyword">val</span> intent = Intent(context, MusicListDetailActivity::<span class="hljs-keyword">class</span>.java)
+                    <span class="hljs-keyword">val</span> categoryMenu = CategoryMenu(
+                        musicMenu1.musicMenuId, musicMenu1.categoryId, musicMenu1.menuType, musicMenu1.coverUrl,
+                        musicMenu1.title, musicMenu1.subTitle, musicMenu1.songsCount, musicMenu1.sequence, musicMenu1.vipState,
+                        musicMenu1.loginState, musicMenu1.publishState, musicMenu1.description, musicMenu1.heatLevel)
+                    intent.putExtra(<span class="hljs-string">&quot;categoryMenu&quot;</span>, categoryMenu)
+                    context.startActivity(intent)
+                }
+                <span class="hljs-keyword">if</span>(dataSize &gt;= <span class="hljs-number">2</span>) {
+                    <span class="hljs-keyword">val</span> musicMenu2 = <span class="hljs-keyword">data</span>[<span class="hljs-number">1</span>]
+                    Glide.with(context).load(musicMenu2.coverUrl).into(iv_second_cover)
+                    tv_second_title.text = musicMenu2.title
+                    tv_second_desc.text = musicMenu2.subTitle
+                    cv_second.visibility = View.VISIBLE
+                    iv_second_vip_tag.visibility = <span class="hljs-keyword">if</span>(musicMenu2.vipState == <span class="hljs-number">1</span>) View.VISIBLE <span class="hljs-keyword">else</span> View.INVISIBLE
+                    cv_second.setOnClickListener {
+                        <span class="hljs-keyword">val</span> intent = Intent(context, MusicListDetailActivity::<span class="hljs-keyword">class</span>.java)
+                        <span class="hljs-keyword">val</span> categoryMenu = CategoryMenu(
+                            musicMenu2.musicMenuId, musicMenu2.categoryId, musicMenu2.menuType, musicMenu2.coverUrl,
+                            musicMenu2.title, musicMenu2.subTitle, musicMenu2.songsCount, musicMenu2.sequence, musicMenu2.vipState,
+                            musicMenu2.loginState, musicMenu2.publishState, musicMenu2.description, musicMenu2.heatLevel)
+                        intent.putExtra(<span class="hljs-string">&quot;categoryMenu&quot;</span>, categoryMenu)
+                        context.startActivity(intent)
+                    }
+                    <span class="hljs-keyword">if</span>(dataSize &gt;= <span class="hljs-number">3</span>) {
+                        <span class="hljs-keyword">val</span> musicMenu3 = <span class="hljs-keyword">data</span>[<span class="hljs-number">2</span>]
+                        Glide.with(context).load(musicMenu3.coverUrl).into(iv_third_cover)
+                        tv_third_title.text = musicMenu3.title
+                        tv_third_desc.text = musicMenu3.subTitle
+                        cv_third.visibility = View.VISIBLE
+                        iv_third_vip_tag.visibility = <span class="hljs-keyword">if</span>(musicMenu3.vipState == <span class="hljs-number">1</span>) View.VISIBLE <span class="hljs-keyword">else</span> View.INVISIBLE
+                        cv_third.setOnClickListener {
+                            <span class="hljs-keyword">val</span> intent = Intent(context, MusicListDetailActivity::<span class="hljs-keyword">class</span>.java)
+                            <span class="hljs-keyword">val</span> categoryMenu = CategoryMenu(
+                                musicMenu3.musicMenuId, musicMenu3.categoryId, musicMenu3.menuType, musicMenu3.coverUrl,
+                                musicMenu3.title, musicMenu3.subTitle, musicMenu3.songsCount, musicMenu3.sequence, musicMenu3.vipState,
+                                musicMenu3.loginState, musicMenu3.publishState, musicMenu3.description, musicMenu3.heatLevel)
+                            intent.putExtra(<span class="hljs-string">&quot;categoryMenu&quot;</span>, categoryMenu)
+                            context.startActivity(intent)
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+    <span class="hljs-keyword">inner</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">OKYAViewHolder</span></span>(view: View): RecyclerView.ViewHolder(view) {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_cover)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_more_right = view.findViewById&lt;ImageView&gt;(R.id.iv_more_right)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_title)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_sub_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_sub_title)
+
+        <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">bind</span><span class="hljs-params">(cover: <span class="hljs-type">String</span>)</span></span> {
+            Glide.with(context).load(cover).into(iv_cover)
+            tv_title.text = getTextRes(R.string.okya_lesson_title)
+            tv_sub_title.text = mData.subTitles?.TPI_OKYA_MANAGE_SUBTITLE
+            iv_more_right.setOnClickListener {
+                context.startActivity(Intent(context, OkyaActivity::<span class="hljs-keyword">class</span>.java))
+            }
+            iv_cover.setOnClickListener {
+                context.startActivity(Intent(context, OkyaActivity::<span class="hljs-keyword">class</span>.java))
+            }
+        }
+    }
+
+    <span class="hljs-keyword">inner</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">VideoViewHolder</span></span>(view: View): RecyclerView.ViewHolder(view) {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_title)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_sub_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_sub_title)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> cv_first = view.findViewById&lt;CardView&gt;(R.id.cv_first)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_first_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_first_cover)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_first_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_first_title)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_first_desc = view.findViewById&lt;EnTextView&gt;(R.id.tv_first_desc)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_first_vip_tag = view.findViewById&lt;ImageView&gt;(R.id.iv_first_vip_tag)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> cv_second = view.findViewById&lt;CardView&gt;(R.id.cv_second)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_second_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_second_cover)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_second_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_second_title)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_second_desc = view.findViewById&lt;EnTextView&gt;(R.id.tv_second_desc)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_second_vip_tag = view.findViewById&lt;ImageView&gt;(R.id.iv_second_vip_tag)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> cv_third = view.findViewById&lt;CardView&gt;(R.id.cv_third)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_third_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_third_cover)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_third_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_third_title)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_third_desc = view.findViewById&lt;EnTextView&gt;(R.id.tv_third_desc)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_third_vip_tag = view.findViewById&lt;ImageView&gt;(R.id.iv_third_vip_tag)
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_more_right = view.findViewById&lt;ImageView&gt;(R.id.iv_more_right)
+
+        <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">bind</span><span class="hljs-params">(<span class="hljs-keyword">data</span>: <span class="hljs-type">ArrayList</span>&lt;<span class="hljs-type">VideoAlbum</span>&gt;)</span></span> {
+            tv_title.text = <span class="hljs-string">&quot;精彩视频&quot;</span>
+            tv_sub_title.text = mData.subTitles?.WONDERFUL_VIDEO_SUBTITLE
+            iv_more_right.setOnClickListener {
+                context.startActivity(Intent(context, FeaturedVideoActivity::<span class="hljs-keyword">class</span>.java))
+            }
+            <span class="hljs-keyword">val</span> dataSize = <span class="hljs-keyword">data</span>.size
+            cv_first.visibility = View.INVISIBLE
+            cv_second.visibility = View.INVISIBLE
+            cv_third.visibility = View.INVISIBLE
+            <span class="hljs-keyword">if</span>(dataSize &gt;= <span class="hljs-number">1</span>) {
+                <span class="hljs-keyword">val</span> data1 = <span class="hljs-keyword">data</span>[<span class="hljs-number">0</span>]
+                Glide.with(context).load(data1.coverUrl).into(iv_first_cover)
+                tv_first_title.text = data1.title
+                tv_first_desc.text = data1.subTitle
+                cv_first.visibility = View.VISIBLE
+                iv_first_vip_tag.visibility = <span class="hljs-keyword">if</span>(data1.vipState == <span class="hljs-number">1</span>) View.VISIBLE <span class="hljs-keyword">else</span> View.INVISIBLE
+                cv_first.setOnClickListener {
+                    <span class="hljs-keyword">val</span> intent = Intent(context, VideoPlayerActivity::<span class="hljs-keyword">class</span>.java)
+                    intent.putExtra(<span class="hljs-string">&quot;videoAlbumId&quot;</span>, data1.videoAlbumId)
+                    context.startActivity(intent)
+                }
+                <span class="hljs-keyword">if</span>(dataSize &gt;= <span class="hljs-number">2</span>) {
+                    <span class="hljs-keyword">val</span> data2 = <span class="hljs-keyword">data</span>[<span class="hljs-number">1</span>]
+                    Glide.with(context).load(data2.coverUrl).into(iv_second_cover)
+                    tv_second_title.text = data2.title
+                    tv_second_desc.text = data2.subTitle
+                    cv_second.visibility = View.VISIBLE
+                    iv_second_vip_tag.visibility = <span class="hljs-keyword">if</span>(data2.vipState == <span class="hljs-number">1</span>) View.VISIBLE <span class="hljs-keyword">else</span> View.INVISIBLE
+                    cv_second.setOnClickListener {
+                        <span class="hljs-keyword">val</span> intent = Intent(context, VideoPlayerActivity::<span class="hljs-keyword">class</span>.java)
+                        intent.putExtra(<span class="hljs-string">&quot;videoAlbumId&quot;</span>, data2.videoAlbumId)
+                        context.startActivity(intent)
+                    }
+                    <span class="hljs-keyword">if</span>(dataSize &gt;= <span class="hljs-number">3</span>) {
+                        <span class="hljs-keyword">val</span> data3 = <span class="hljs-keyword">data</span>[<span class="hljs-number">2</span>]
+                        Glide.with(context).load(data3.coverUrl).into(iv_third_cover)
+                        tv_third_title.text = data3.title
+                        tv_third_desc.text = data3.subTitle
+                        cv_third.visibility = View.VISIBLE
+                        iv_third_vip_tag.visibility = <span class="hljs-keyword">if</span>(data3.vipState == <span class="hljs-number">1</span>) View.VISIBLE <span class="hljs-keyword">else</span> View.INVISIBLE
+                        cv_third.setOnClickListener {
+                            <span class="hljs-keyword">val</span> intent = Intent(context, VideoPlayerActivity::<span class="hljs-keyword">class</span>.java)
+                            intent.putExtra(<span class="hljs-string">&quot;videoAlbumId&quot;</span>, data3.videoAlbumId)
+                            context.startActivity(intent)
+                        }
+                    }
+                }
+            }
+        }
     }
 }

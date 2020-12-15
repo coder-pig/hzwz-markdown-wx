@@ -44,4 +44,5 @@ def renderer_by_node(content, theme, language=None):
             result += '{}{}<br>'.format('&nbsp;' * left_blank_count, line.lstrip())
     for (key, value) in items:
         result = result.replace('class="{}"'.format(key), 'style="{}"'.format(value))
+    result = result.replace("~", "%")
     return result

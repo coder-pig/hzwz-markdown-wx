@@ -28,4 +28,4 @@ class KotlinRenderer(mistune.HTMLRenderer):
     # 代码块
     def block_code(self, code, info=None):
         highlight_result = renderer_by_node(code, 'androidstudio', info)
-        return self.mac_window.render(text=highlight_result)
+        return self.mac_atom_one_dark.render(text=highlight_result)
