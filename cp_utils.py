@@ -9,15 +9,29 @@
 -------------------------------------------------
 """
 import os
+import shutil
+
+
+def delete_file(file_path):
+    del_list = os.listdir(file_path)
+    for f in del_list:
+        file_path = os.path.join(file_path, f)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
 
 
 # 判断目录是否存在，不存在则创建
-def is_dir_existed(path, mkdir=True):
+def is_dir_existed(file_path, mkdir=True, is_recreate=False):
     if mkdir:
-        if not os.path.exists(path):
-            os.makedirs(path)
+        if not os.path.exists(file_path):
+            os.makedirs(file_path)
+        else:
+            if is_recreate:
+                delete_file(file_path)
     else:
-        return os.path.exists(path)
+        return os.path.exists(file_path)
 
 
 # 获取目录下的所有文件路径
@@ -35,4 +49,9 @@ def read_file_content(file_path):
 
 def write_file(content, file_path):
     with open(file_path, "w+", encoding='utf-8') as f:
+        f.write(content)
+
+
+def write_file_append(content, file_path):
+    with open(file_path, "a+", encoding='utf-8') as f:
         f.write(content)

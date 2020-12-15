@@ -1,4 +1,5 @@
-const hljs = require('./highlight');
+const hljs = require('./highlight.pack');
+hljs.configure()
 const highlightedCode = hljs.highlightAuto('private static byte[] loadIndexes(Context context) {\n' +
     '        byte[] indexes = null;\n' +
     '\n' +
@@ -24,5 +25,5 @@ const highlightedCode = hljs.highlightAuto('private static byte[] loadIndexes(Co
     '        }\n' +
     '\n' +
     '        return indexes;\n' +
-    '    }').value
-console.log(highlightedCode)
+    '    }').value;
+console.log(highlightedCode);
