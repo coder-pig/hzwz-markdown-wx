@@ -1,0 +1,292 @@
+class MultiUploadTask(context: Context) {
+    private var mContext: Context? = context
+    private var isUploadFlag: Boolean = true    // 是否允许上传
+    private var mUploadResultListener = object : UploadResultListener {
+        override fun onSuccess() {}
+
+        override fun onFailed() {
+            EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_FAILURE))
+        }
+    }
+
+    fun stopUploadFiles() {
+        isUploadFlag = false
+    }
+
+    /**
+     * 上传单个文件
+     * [path] 文件路径
+     * [md5] 文件md5
+     * */
+    private fun uploadFile(path: String, md5: String?) {
+        val file = File(path)
+        val fileName = file.name
+        val fileType = if (fileName.indexOf(".") != -1) fileName.substring(fileName.lastIndexOf(".")) else ".jpg"
+        val requestFile = RequestBody.create(MediaType.parse("multipart/form-data"), file)
+        val body = MultipartBody.Part.createFormData("file", "${md5}${fileType}", requestFile)
+        MultiUploadManager.uploadFile(body)
+                .subscribe(object : CallBack1<HashMap<String, String>>() {
+                    override fun onResponses(response: Response<Bean<HashMap<String, String>>>?) {
+                        response?.body()?.apply {
+                            isSuccess trueLet {
+                                EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_SUCCESS, UrlList(data.keys.toList()[0], data.values.toList()[0])))
+                                mUploadResultListener.onSuccess()
+                            } elseLet {
+                                mUploadResultListener.onFailed()
+                            }
+                        }
+                    }
+
+                    override fun onFailures(nono: NonoException?) {
+                        nono?.let {
+                            it.message?.let { msg -> PartnerLogger.d(msg) }
+                            (it is SocketTimeoutException) trueLet {
+                                EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_FAILURE, UrlList(md5, path)))
+                                stopUploadFiles()
+                            } elseLet {
+                                EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_FAILURE, UrlList(md5, path)))
+                            }
+                            mUploadResultListener.onFailed()
+                        }
+                    }
+                })
+    }
+
+    /**
+     * 上传多张普通图片
+     * [data] 图片路径列表
+     * [isCompress] 是否压缩上传，默认true
+     * [compress] 压缩比例，默认80
+     * */
+    fun uploadPictures(data: ArrayList<String>, isCompress: Boolean = true, compress: Int = 80) {
+        val uploadUrlList = ArrayList<UrlList>()
+        isUploadFlag trueLet {
+            EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_BEGIN))
+            data.takeIf { it.isNotEmpty() }.apply {
+                // 批量相片旋转摆正
+                data.forEach {
+                    val degree = readPictureDegree(it)
+                    (degree != 0) trueLet { rotateToDegrees(it, degree.toFloat()) }
+                }
+                // 批量压缩
+                isCompress trueLet {
+                    val tempUrlList = ArrayList<CompressBean>()
+                    data.forEach { url ->
+                        val tag = url.substring(url.lastIndexOf("/"))
+                        val tempPath = CommonContext.getInstance().recvTempPath.absolutePath + tag
+                        tempUrlList.add(CompressBean(url, tempPath))
+                    }
+                    MultiUploadManager.compressPictures(tempUrlList)
+                            .flatMap {
+                                // 批量压缩
+                                val checkMD5Req = CheckMD5Req(ArrayList())
+                                tempUrlList.forEach {
+                                    compressImage(getLocalImage(File(it.oldPath)), File(it.newPath), compress)
+                                    uploadUrlList.add(UrlList(makeFileMD5Str(it.oldPath), it.oldPath))
+                                }
+                                checkMD5Req.md5Array = uploadUrlList.map { it.md5 }.toMutableList() as ArrayList<String>
+                                return@flatMap MultiUploadManager.checkMD5(checkMD5Req)
+                            }.flatMap { result ->
+                                // md5校验
+                                if (result.isSuccessful) {
+                                    val urlList = result.body().data.urlList
+                                    urlList.takeIf { it != null }!!.forEach { uploadUrlList.forEach { uploadUrl -> if (uploadUrl.md5 == it.md5) uploadUrl.url = it.url } }
+                                    return@flatMap Observable.from(uploadUrlList).subscribeOn(Schedulers.io()).observeOn(Schedulers.io())
+                                } else {
+                                    return@flatMap Observable.error<UrlList>(MD5CheckException(data))
+                                }
+                            }.observeOn(AndroidSchedulers.mainThread()).subscribe({ urlList ->
+                                EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_START, UrlList(urlList.md5, urlList.url)))
+                                urlList.url?.let { url ->
+                                    url.startsWith("http") trueLet {// 上传过，秒传
+                                        EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_SUCCESS, UrlList(urlList.md5, url)))
+                                    } elseLet { uploadFile(urlList.url!!, urlList.md5!!) }
+                                }
+                            }, {
+                                when (it) {
+                                    is MD5CheckException -> EventBus.getDefault().postSticky(MD5CheckFailureEvent(it.urlList))
+                                    else -> it.message?.let { msg -> PartnerLogger.d(msg) }
+                                }
+                            })
+                } elseLet {
+                    // 上传原图
+                    data.forEach { uploadUrlList.add(UrlList(makeFileMD5Str(it), it)) }
+                    val checkMD5Req = CheckMD5Req(uploadUrlList.map { it.md5 }.toMutableList() as ArrayList<String>)
+                    MultiUploadManager.checkMD5(checkMD5Req).flatMap { result ->
+                        // md5校验
+                        result.body().isSuccess trueLet {
+                            val urlList = result.body().data.urlList
+                            urlList.takeIf { it != null }!!.forEach { uploadUrlList.forEach { uploadUrl -> if (uploadUrl.md5 == it.md5) uploadUrl.url = it.url } }
+                            EventBus.getDefault().postSticky(MD5CheckEvent(CHECK_MD5_SUCCESS))
+                        } elseLet {
+                            EventBus.getDefault().postSticky(MD5CheckEvent(CHECK_MD5_FAILURE))
+                        }
+                        return@flatMap Observable.from(uploadUrlList)
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                    }.subscribe({ urlList ->
+                        EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_START, UrlList(urlList.md5, urlList.url)))
+                        urlList.url?.let { url ->
+                            url.startsWith("http") trueLet {
+                                EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_SUCCESS, UrlList(urlList.md5, url)))
+                            } elseLet { uploadFile(urlList.url!!, urlList.md5!!) }
+                        }
+                    }, {
+                        it.message?.let { msg -> PartnerLogger.d(msg) }
+//                        uploadUrlList.forEach {urlList ->
+//                            EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_FAILURE, UrlList(urlList.md5, urlList.url)))
+//                        }
+                    })
+                }
+            }
+        } elseLet {
+            EventBus.getDefault().postSticky(UploadFileEvent(UPLOAD_STOP))
+        }
+    }
+
+
+    /**
+     * 视频上传
+     * [videoPath] 本地视频路径
+     * 流程：压缩视频 → 生成第一帧 → 校验MD5 → 上传视频 → 上传第一帧 → 通知视频上传成功
+     * */
+    fun uploadVideo(videoPath: String) {
+        val uploadVideoEvent = UploadVideoEvent() // 视频上传Event
+        val videoFile = File(videoPath) // 原视频文件
+        var compressVideoFile: File? = null   // 压缩视频文件
+        var compressVideoPath: String? = ""   // 压缩视频路径
+        var compressVideoMD5: String? = ""   // 压缩视频MD5
+        val tag = videoPath.substring(videoPath.lastIndexOf("/")) // 获取第一帧文件名
+        val videoFrameFile = File(CommonContext.getInstance().recvTempPath.absolutePath + tag) // 第一帧文件
+        var videoFramePath = videoFrameFile.absolutePath    // 第一帧路径
+        var videoFrameMD5: String? = "" // 第一帧MD5
+        if (videoFile.exists()) {
+            EventBus.getDefault().postSticky(UploadVideoEvent(MultiUploadConstants.UPLOAD_VIDEO_START, videoPath))
+            Observable.just(videoPath)
+                    .subscribeOn(AndroidSchedulers.mainThread())
+                    .observeOn(Schedulers.io())
+                    .flatMap {
+                        // 压缩视频
+                        compressVideoPath = SiliCompressor.with(mContext).compressVideo(videoPath, getExternalVideoPath(), 1280, 720, 1500000)
+                        compressVideoFile = File(compressVideoPath)
+                        compressVideoMD5 = makeFileMD5Str(compressVideoPath!!)
+                        uploadVideoEvent.videoPath = compressVideoPath
+                        uploadVideoEvent.videoMD5 = compressVideoMD5
+                        Observable.just(compressVideoPath)
+                    }.observeOn(Schedulers.io())
+                    .flatMap {
+                        // 生成视频第一帧
+                        val mmr = MediaMetadataRetriever()
+                        mmr.setDataSource(compressVideoPath!!)
+                        val frameBitmap = mmr.frameAtTime
+                        compressImage(frameBitmap, videoFrameFile, 80)
+                        videoFrameMD5 = makeFileMD5Str(videoFramePath)
+                        uploadVideoEvent.thumbPath = videoFramePath
+                        uploadVideoEvent.thumbMD5 = videoFrameMD5
+                        MultiUploadManager.checkMD5(CheckMD5Req(arrayListOf(compressVideoMD5!!, videoFrameMD5!!)))
+                    }.observeOn(Schedulers.io())
+                    .flatMap {
+                        if (it.isSuccessful) {
+                            // 压缩视频及第一帧MD5核验
+                            it?.body()?.data?.urlList?.apply {
+                                forEach { urlList ->
+                                    if (urlList.md5 == compressVideoMD5) {
+                                        compressVideoPath = urlList.url
+                                        uploadVideoEvent.videoPath = compressVideoPath
+                                    }
+                                    if (urlList.md5 == videoFrameMD5) {
+                                        videoFramePath = urlList.url
+                                        uploadVideoEvent.thumbPath = videoFramePath
+                                    }
+                                }
+                            }
+                            // 上传视频
+                            if (!compressVideoPath!!.startsWith("http")) {
+                                // 服务器不存在此视频
+                                val requestFile = RequestBody.create(MediaType.parse("multipart/form-data"), compressVideoFile!!)
+                                val body = MultipartBody.Part.createFormData("file", "${compressVideoMD5}.mp4", requestFile)
+                                return@flatMap MultiUploadManager.uploadFile(body)
+                            } else {
+                                // 服务器已存在此视频，上传第一帧
+                                if (!videoFramePath.startsWith("http")) {
+                                    // 服务器不存在第一帧
+                                    val requestFile = RequestBody.create(MediaType.parse("multipart/form-data"), videoFrameFile)
+                                    val body = MultipartBody.Part.createFormData("file", "${videoFrameMD5}.jpg", requestFile)
+                                    return@flatMap MultiUploadManager.uploadFile(body)
+                                } else {
+                                    // 服务器已存在第一帧，跳过上传
+                                    return@flatMap Observable.error<String>(UpLoadFinish(UPLOAD_VIDEO_SUCCESS))
+                                }
+                            }
+                        } else {
+                            return@flatMap Observable.error<UrlList>(MD5CheckException(arrayListOf(videoPath)))
+                        }
+                    }.observeOn(Schedulers.io())
+                    .flatMap {
+                        val result = it as Response<Bean<HashMap<String, String>>>
+                        if (result.isSuccessful) {
+                            val url = result.body().data.values.toList()[0]
+                            // 判断视频上传的回调，是开始上传第一帧，否则为第一帧回调
+                            if (url.endsWith(".mp4")) {
+                                compressVideoPath = url
+                                uploadVideoEvent.videoPath = compressVideoPath
+                                // 判断服务器上是否已有第一帧
+                                if (!videoFramePath.startsWith("http")) {
+                                    // 不存在第一帧
+                                    val requestFile = RequestBody.create(MediaType.parse("multipart/form-data"), videoFrameFile)
+                                    val body = MultipartBody.Part.createFormData("file", "${videoFrameMD5}.jpg", requestFile)
+                                    return@flatMap MultiUploadManager.uploadFile(body)
+                                } else {
+                                    // 服务器已存在第一帧，跳过上传
+                                    return@flatMap Observable.error<String>(UpLoadFinish(UPLOAD_VIDEO_SUCCESS))
+                                }
+                            } else {
+                                // 第一帧的回调
+                                videoFramePath = url
+                                uploadVideoEvent.thumbPath = url
+                                // 服务器已存在第一帧，跳过上传
+                                return@flatMap Observable.error<String>(UpLoadFinish(UPLOAD_VIDEO_SUCCESS))
+                            }
+                        } else {
+                            return@flatMap Observable.error<String>(UpLoadFinish(UPLOAD_VIDEO_FAILURE))
+                        }
+                    }.observeOn(Schedulers.io())
+                    .flatMap {
+                        val result = it as Response<Bean<HashMap<String, String>>>
+                        if (result.isSuccessful) {
+                            val url = result.body().data.values.toList()[0]
+                            // 第一帧的回调
+                            videoFramePath = url
+                            uploadVideoEvent.thumbPath = url
+                            return@flatMap Observable.error<String>(UpLoadFinish(UPLOAD_VIDEO_SUCCESS))
+                        } else {
+                            return@flatMap Observable.error<String>(UpLoadFinish(UPLOAD_VIDEO_FAILURE))
+                        }
+                    }.observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({}, {
+                        when (it) {
+                            is MD5CheckException -> EventBus.getDefault().postSticky(MD5CheckFailureEvent(it.urlList))
+                            is UpLoadFinish -> {
+                                if (it.uploadStatus == UPLOAD_VIDEO_SUCCESS) {
+                                    EventBus.getDefault().postSticky(uploadVideoEvent.apply { status = UPLOAD_VIDEO_SUCCESS })
+                                } else {
+                                    EventBus.getDefault().postSticky(uploadVideoEvent.apply { status = UPLOAD_VIDEO_FAILURE })
+                                }
+                            }
+                            else -> {
+                                it.message?.let { msg -> PartnerLogger.d(msg) }
+                                EventBus.getDefault().postSticky(uploadVideoEvent.apply { status = UPLOAD_VIDEO_FAILURE })
+                            }
+                        }
+                    })
+        }
+    }
+
+    /**
+     * 上传结果回调
+     * */
+    interface UploadResultListener {
+        fun onSuccess()
+        fun onFailed()
+    }
+}

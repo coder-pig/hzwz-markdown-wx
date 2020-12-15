@@ -1,29 +1,39 @@
-const hljs = require('./highlight.pack');
-hljs.configure()
-const highlightedCode = hljs.highlightAuto('private static byte[] loadIndexes(Context context) {\n' +
-    '        byte[] indexes = null;\n' +
-    '\n' +
-    '        InputStream is = null;\n' +
-    '        try {\n' +
-    '            is = context.getAssets().open(ASSET);\n' +
-    '\n' +
-    '            indexes = new byte[(END - START + 1) * 2];\n' +
-    '\n' +
-    '            is.read(indexes);\n' +
-    '        } catch (Throwable tr) {\n' +
-    '            PartnerLogger.d(tr.getMessage());\n' +
-    '\n' +
-    '            indexes = null;\n' +
-    '        } finally {\n' +
-    '            if (is != null) {\n' +
-    '                try {\n' +
-    '                    is.close();\n' +
-    '                } catch (IOException e) {\n' +
-    '                    PartnerLogger.d(e.getMessage());\n' +
-    '                }\n' +
-    '            }\n' +
-    '        }\n' +
-    '\n' +
-    '        return indexes;\n' +
-    '    }').value;
-console.log(highlightedCode);
+const dirPath = __dirname
+const hljs = require(dirPath + '/highlight.pack.js');
+const fs = require('fs');
+const readline = require('readline')
+const language = process.argv.splice(2)[0]
+var fReadName = dirPath + '/transform/before.html'
+var fWriteName = dirPath + '/transform/after.html'
+var fRead = fs.createReadStream(fReadName)
+var fWrite = fs.createWriteStream(fWriteName)
+var objReadline = readline.createInterface({
+    input: fRead,
+    terminal: true
+});
+var data = ''
+objReadline.on('line', (line) => {
+    data += line + "\n"
+});
+objReadline.on('close', () => {
+    var highlightedCode = ''
+    if (language == null) {
+        highlightedCode = hljs.highlightAuto(data).value;
+    } else {
+        highlightedCode = hljs.highlight(languageName = language, code = data).value;
+    }
+    fWrite.write(highlightedCode)
+})
+
+// const read = fs.createReadStream('transform/before.html')
+// const data = [];
+// read.on('data', function (chunk) {
+//     data.push(chunk.toString());
+// });
+// read.on('end', function () {
+//     console.log(data);
+// })
+
+// var args = process.argv.splice(2)
+// const highlightedCode = hljs.highlightAuto(args).value;
+// console.log(highlightedCode);
