@@ -39,6 +39,16 @@ def fetch_all_file(file_dir):
     return list(map(lambda x: os.path.join(file_dir, x), os.listdir(file_dir)))
 
 
+# 获取目录下特定后缀的文件路径列表
+def filter_file_type(file_dir, file_suffix):
+    result_list = []
+    file_path_list = fetch_all_file(file_dir)
+    for file_path in file_path_list:
+        if file_path.endswith(file_suffix):
+            result_list.append(file_path)
+    return result_list
+
+
 def read_file_content(file_path):
     if not os.path.exists(file_path):
         return "文件不存在"

@@ -1,299 +1,195 @@
-<span class="hljs-keyword">package</span> com.qitianzhen.skradio.ui.index
+<span class="hljs-comment"># -*- coding: utf-8 -*-</span>
+<span class="hljs-comment"># !/usr/bin/env python</span>
+<span class="hljs-string">&quot;&quot;&quot;
+-------------------------------------------------
+   File     : CpPythonSpiderRenderer.py
+   Author   : CoderPig
+   date     : 2020-11-27 14:13 
+   Desc     : 抠腚男孩 → Python爬虫系列样式 → https://mp.weixin.qq.com/s/why-ikTbbiCG4uzGer48IQ
+-------------------------------------------------
+&quot;&quot;&quot;</span>
+<span class="hljs-keyword">import</span> os
 
-<span class="hljs-keyword">import</span> android.content.Context
-<span class="hljs-keyword">import</span> android.content.Intent
-<span class="hljs-keyword">import</span> android.view.LayoutInflater
-<span class="hljs-keyword">import</span> android.view.View
-<span class="hljs-keyword">import</span> android.view.ViewGroup
-<span class="hljs-keyword">import</span> android.widget.ImageView
-<span class="hljs-keyword">import</span> androidx.cardview.widget.CardView
-<span class="hljs-keyword">import</span> androidx.recyclerview.widget.RecyclerView
-<span class="hljs-keyword">import</span> com.bumptech.glide.Glide
-<span class="hljs-keyword">import</span> com.bumptech.glide.load.resource.bitmap.RoundedCorners
-<span class="hljs-keyword">import</span> com.bumptech.glide.request.RequestOptions
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.R
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.<span class="hljs-keyword">data</span>.Banner
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.<span class="hljs-keyword">data</span>.IndexDataResult
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.<span class="hljs-keyword">data</span>.MusicMenu
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.<span class="hljs-keyword">data</span>.VideoAlbum
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.entity.CategoryMenu
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.ui.featured.FeaturedVideoActivity
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.ui.featured.VideoPlayerActivity
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.ui.music.MusicListActivity
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.ui.music.MusicListDetailActivity
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.ui.okya.lesson.OkyaActivity
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.ui.qtz.QtzMusicActivity
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.utils.dp2px
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.utils.getTextRes
-<span class="hljs-keyword">import</span> com.qitianzhen.skradio.widget.EnTextView
-<span class="hljs-keyword">import</span> kotlinx.android.synthetic.main.item_index_banner.view.*
+<span class="hljs-keyword">import</span> mistune
+<span class="hljs-keyword">from</span> jinja2 <span class="hljs-keyword">import</span> Environment, FileSystemLoader
+<span class="hljs-keyword">from</span> lxml <span class="hljs-keyword">import</span> etree
+<span class="hljs-keyword">from</span> pygments <span class="hljs-keyword">import</span> highlight
+<span class="hljs-keyword">from</span> pygments.formatters <span class="hljs-keyword">import</span> html
+<span class="hljs-keyword">from</span> pygments.lexers <span class="hljs-keyword">import</span> get_lexer_by_name
 
 
-<span class="hljs-comment">/**
- * <span class="hljs-doctag">@Author</span> CoderPig
- * <span class="hljs-doctag">@Desc</span>: 首页Adapter
- * <span class="hljs-doctag">@CreateDate</span>: Create in 2020-01-16 14:39
- */</span>
-<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">IndexAdapter</span></span>(<span class="hljs-keyword">var</span> context: Context)  : RecyclerView.Adapter&lt;RecyclerView.ViewHolder&gt;()  {
-    <span class="hljs-keyword">companion</span> <span class="hljs-keyword">object</span> {
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">const</span> <span class="hljs-keyword">val</span> BANNER_ITEM = <span class="hljs-number">0</span>    <span class="hljs-comment">// Banner</span>
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">const</span> <span class="hljs-keyword">val</span> QZT_ITEM = <span class="hljs-number">1</span>    <span class="hljs-comment">// 七田真专区</span>
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">const</span> <span class="hljs-keyword">val</span> GROWTH_ITEM = <span class="hljs-number">2</span>    <span class="hljs-comment">// 成长频道</span>
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">const</span> <span class="hljs-keyword">val</span> OKYA_ITEM = <span class="hljs-number">3</span>    <span class="hljs-comment">// 成长频道</span>
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">const</span> <span class="hljs-keyword">val</span> VIDEO_ITEM = <span class="hljs-number">4</span>    <span class="hljs-comment">// 精彩视频</span>
-    }
+<span class="hljs-comment"># 表格单元格</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Cell</span>:</span>
+    text = <span class="hljs-literal">None</span>
+    align = <span class="hljs-literal">None</span>
+    is_head = <span class="hljs-literal">False</span>
 
-    <span class="hljs-keyword">private</span> <span class="hljs-keyword">var</span> mData: IndexDataResult = IndexDataResult(<span class="hljs-literal">null</span>,<span class="hljs-literal">null</span>,<span class="hljs-literal">null</span>,<span class="hljs-literal">null</span>, <span class="hljs-literal">null</span>, <span class="hljs-string">&quot;&quot;</span>,<span class="hljs-string">&quot;&quot;</span>)
-    <span class="hljs-keyword">private</span> <span class="hljs-keyword">var</span> currentType = BANNER_ITEM    <span class="hljs-comment">// 当前Item</span>
-
-    <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">refresh</span><span class="hljs-params">(<span class="hljs-keyword">data</span>: <span class="hljs-type">IndexDataResult</span>)</span></span> {
-        mData = <span class="hljs-keyword">data</span>
-        notifyDataSetChanged()
-    }
-
-    <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">onCreateViewHolder</span><span class="hljs-params">(parent: <span class="hljs-type">ViewGroup</span>, viewType: <span class="hljs-type">Int</span>)</span></span>: RecyclerView.ViewHolder {
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">when</span>(viewType) {
-            QZT_ITEM -&gt; QtzViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_qtz, parent, <span class="hljs-literal">false</span>))
-            GROWTH_ITEM -&gt; GrowthViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_growth, parent, <span class="hljs-literal">false</span>))
-            OKYA_ITEM -&gt; OKYAViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_okya, parent, <span class="hljs-literal">false</span>))
-            VIDEO_ITEM -&gt; VideoViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_video, parent, <span class="hljs-literal">false</span>))
-            <span class="hljs-keyword">else</span> -&gt; BannerViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_banner, parent, <span class="hljs-literal">false</span>))
-        }
-    }
-
-    <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">onBindViewHolder</span><span class="hljs-params">(holder: <span class="hljs-type">RecyclerView</span>.<span class="hljs-type">ViewHolder</span>, position: <span class="hljs-type">Int</span>)</span></span> {
-        <span class="hljs-keyword">when</span>(position) {
-            BANNER_ITEM -&gt; { mData.banners?.let { (holder <span class="hljs-keyword">as</span> BannerViewHolder).bind(it) } }
-            QZT_ITEM -&gt; { mData.tpiMusicMenuRes?.let { (holder <span class="hljs-keyword">as</span> QtzViewHolder).bind(mData.tpiImageUrl) } }
-            GROWTH_ITEM -&gt; { mData.musicMenuRes?.let { (holder <span class="hljs-keyword">as</span> GrowthViewHolder).bind(it) } }
-            OKYA_ITEM -&gt; {  (holder <span class="hljs-keyword">as</span> OKYAViewHolder).bind(mData.okyaManageImageUrl)  }
-            VIDEO_ITEM -&gt; { mData.videoAlbums?.let { (holder <span class="hljs-keyword">as</span> VideoViewHolder).bind(it) } }
-        }
-    }
-
-    <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">getItemViewType</span><span class="hljs-params">(position: <span class="hljs-type">Int</span>)</span></span>: <span class="hljs-built_in">Int</span> {
-        <span class="hljs-keyword">when</span>(position) {
-            BANNER_ITEM -&gt; currentType = BANNER_ITEM
-            QZT_ITEM -&gt; currentType = QZT_ITEM
-            GROWTH_ITEM -&gt; currentType = GROWTH_ITEM
-            OKYA_ITEM -&gt; currentType = OKYA_ITEM
-            VIDEO_ITEM -&gt; currentType = VIDEO_ITEM
-        }
-        <span class="hljs-keyword">return</span> currentType
-    }
-
-    <span class="hljs-keyword">override</span> <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">getItemCount</span><span class="hljs-params">()</span></span>: <span class="hljs-built_in">Int</span> = <span class="hljs-number">5</span>
-
-    <span class="hljs-keyword">inner</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BannerViewHolder</span></span>(view: View): RecyclerView.ViewHolder(view) {
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_banner = view.iv_banner
-
-        <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">bind</span><span class="hljs-params">(<span class="hljs-keyword">data</span>: <span class="hljs-type">ArrayList</span>&lt;<span class="hljs-type">Banner</span>&gt;)</span></span> {
-            <span class="hljs-keyword">if</span>(<span class="hljs-keyword">data</span>.size &gt; <span class="hljs-number">0</span>) {
-                Glide.with(context).load(<span class="hljs-keyword">data</span>[<span class="hljs-number">0</span>].imageUrl)
-                    .apply(RequestOptions.bitmapTransform(RoundedCorners(dp2px(<span class="hljs-number">24.0f</span>))))
-                    .into(iv_banner)
-                iv_banner.setOnClickListener {
-                    <span class="hljs-keyword">val</span> intent = Intent(context, BannerDetailActivity::<span class="hljs-keyword">class</span>.java)
-                    intent.putExtra(<span class="hljs-string">&quot;detailImageUrls&quot;</span>, <span class="hljs-keyword">data</span>[<span class="hljs-number">0</span>].detailImageUrls)
-                    context.startActivity(intent)
-                }
-            }
-        }
-    }
-
-    <span class="hljs-keyword">inner</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">QtzViewHolder</span></span>(view: View): RecyclerView.ViewHolder(view) {
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_cover)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_more_right = view.findViewById&lt;ImageView&gt;(R.id.iv_more_right)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_title)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_sub_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_sub_title)
-
-        <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">bind</span><span class="hljs-params">(cover: <span class="hljs-type">String</span>)</span></span> {
-            tv_title.text = <span class="hljs-string">&quot;七田真专区&quot;</span>
-            tv_sub_title.text = mData.subTitles?.TPI_MUSIC_MENU_SUBTITLE
-            Glide.with(context).load(cover).into(iv_cover)
-            iv_more_right.setOnClickListener {
-                context.startActivity(Intent(context, QtzMusicActivity::<span class="hljs-keyword">class</span>.java))
-            }
-            iv_cover.setOnClickListener {
-                context.startActivity(Intent(context, QtzMusicActivity::<span class="hljs-keyword">class</span>.java))
-            }
-        }
-    }
-
-    <span class="hljs-keyword">inner</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">GrowthViewHolder</span></span>(view: View): RecyclerView.ViewHolder(view) {
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_title)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_sub_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_sub_title)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> cv_first = view.findViewById&lt;CardView&gt;(R.id.cv_first)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_first_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_first_cover)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_first_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_first_title)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_first_desc = view.findViewById&lt;EnTextView&gt;(R.id.tv_first_desc)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_first_vip_tag = view.findViewById&lt;ImageView&gt;(R.id.iv_first_vip_tag)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> cv_second = view.findViewById&lt;CardView&gt;(R.id.cv_second)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_second_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_second_cover)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_second_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_second_title)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_second_desc = view.findViewById&lt;EnTextView&gt;(R.id.tv_second_desc)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_second_vip_tag = view.findViewById&lt;ImageView&gt;(R.id.iv_second_vip_tag)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> cv_third = view.findViewById&lt;CardView&gt;(R.id.cv_third)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_third_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_third_cover)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_third_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_third_title)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_third_desc = view.findViewById&lt;EnTextView&gt;(R.id.tv_third_desc)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_third_vip_tag = view.findViewById&lt;ImageView&gt;(R.id.iv_third_vip_tag)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_more_right = view.findViewById&lt;ImageView&gt;(R.id.iv_more_right)
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span>(<span class="hljs-params">self, text, align, is_left</span>):</span>
+        self.text = text
+        self.align = align
+        self.is_left = is_left
 
 
-        <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">bind</span><span class="hljs-params">(<span class="hljs-keyword">data</span>: <span class="hljs-type">ArrayList</span>&lt;<span class="hljs-type">MusicMenu</span>&gt;)</span></span> {
-            tv_title.text = <span class="hljs-string">&quot;成长歌单&quot;</span>
-            tv_sub_title.text = mData.subTitles?.RECOMMEND_MUSIC_MENU_SUBTITLE
-            iv_more_right.setOnClickListener {
-                context.startActivity(Intent(context, MusicListActivity::<span class="hljs-keyword">class</span>.java))
-            }
-            <span class="hljs-keyword">val</span> dataSize = <span class="hljs-keyword">data</span>.size
-            cv_first.visibility = View.INVISIBLE
-            cv_second.visibility = View.INVISIBLE
-            cv_third.visibility = View.INVISIBLE
-            <span class="hljs-keyword">if</span>(dataSize &gt;= <span class="hljs-number">1</span>) {
-                <span class="hljs-keyword">val</span> musicMenu1 = <span class="hljs-keyword">data</span>[<span class="hljs-number">0</span>]
-                Glide.with(context).load(musicMenu1.coverUrl).into(iv_first_cover)
-                tv_first_title.text = musicMenu1.title
-                tv_first_desc.text = musicMenu1.subTitle
-                cv_first.visibility = View.VISIBLE
-                iv_first_vip_tag.visibility = <span class="hljs-keyword">if</span>(musicMenu1.vipState == <span class="hljs-number">1</span>) View.VISIBLE <span class="hljs-keyword">else</span> View.INVISIBLE
-                cv_first.setOnClickListener {
-                    <span class="hljs-keyword">val</span> intent = Intent(context, MusicListDetailActivity::<span class="hljs-keyword">class</span>.java)
-                    <span class="hljs-keyword">val</span> categoryMenu = CategoryMenu(
-                        musicMenu1.musicMenuId, musicMenu1.categoryId, musicMenu1.menuType, musicMenu1.coverUrl,
-                        musicMenu1.title, musicMenu1.subTitle, musicMenu1.songsCount, musicMenu1.sequence, musicMenu1.vipState,
-                        musicMenu1.loginState, musicMenu1.publishState, musicMenu1.description, musicMenu1.heatLevel)
-                    intent.putExtra(<span class="hljs-string">&quot;categoryMenu&quot;</span>, categoryMenu)
-                    context.startActivity(intent)
-                }
-                <span class="hljs-keyword">if</span>(dataSize &gt;= <span class="hljs-number">2</span>) {
-                    <span class="hljs-keyword">val</span> musicMenu2 = <span class="hljs-keyword">data</span>[<span class="hljs-number">1</span>]
-                    Glide.with(context).load(musicMenu2.coverUrl).into(iv_second_cover)
-                    tv_second_title.text = musicMenu2.title
-                    tv_second_desc.text = musicMenu2.subTitle
-                    cv_second.visibility = View.VISIBLE
-                    iv_second_vip_tag.visibility = <span class="hljs-keyword">if</span>(musicMenu2.vipState == <span class="hljs-number">1</span>) View.VISIBLE <span class="hljs-keyword">else</span> View.INVISIBLE
-                    cv_second.setOnClickListener {
-                        <span class="hljs-keyword">val</span> intent = Intent(context, MusicListDetailActivity::<span class="hljs-keyword">class</span>.java)
-                        <span class="hljs-keyword">val</span> categoryMenu = CategoryMenu(
-                            musicMenu2.musicMenuId, musicMenu2.categoryId, musicMenu2.menuType, musicMenu2.coverUrl,
-                            musicMenu2.title, musicMenu2.subTitle, musicMenu2.songsCount, musicMenu2.sequence, musicMenu2.vipState,
-                            musicMenu2.loginState, musicMenu2.publishState, musicMenu2.description, musicMenu2.heatLevel)
-                        intent.putExtra(<span class="hljs-string">&quot;categoryMenu&quot;</span>, categoryMenu)
-                        context.startActivity(intent)
-                    }
-                    <span class="hljs-keyword">if</span>(dataSize &gt;= <span class="hljs-number">3</span>) {
-                        <span class="hljs-keyword">val</span> musicMenu3 = <span class="hljs-keyword">data</span>[<span class="hljs-number">2</span>]
-                        Glide.with(context).load(musicMenu3.coverUrl).into(iv_third_cover)
-                        tv_third_title.text = musicMenu3.title
-                        tv_third_desc.text = musicMenu3.subTitle
-                        cv_third.visibility = View.VISIBLE
-                        iv_third_vip_tag.visibility = <span class="hljs-keyword">if</span>(musicMenu3.vipState == <span class="hljs-number">1</span>) View.VISIBLE <span class="hljs-keyword">else</span> View.INVISIBLE
-                        cv_third.setOnClickListener {
-                            <span class="hljs-keyword">val</span> intent = Intent(context, MusicListDetailActivity::<span class="hljs-keyword">class</span>.java)
-                            <span class="hljs-keyword">val</span> categoryMenu = CategoryMenu(
-                                musicMenu3.musicMenuId, musicMenu3.categoryId, musicMenu3.menuType, musicMenu3.coverUrl,
-                                musicMenu3.title, musicMenu3.subTitle, musicMenu3.songsCount, musicMenu3.sequence, musicMenu3.vipState,
-                                musicMenu3.loginState, musicMenu3.publishState, musicMenu3.description, musicMenu3.heatLevel)
-                            intent.putExtra(<span class="hljs-string">&quot;categoryMenu&quot;</span>, categoryMenu)
-                            context.startActivity(intent)
-                        }
-                    }
-                }
-            }
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">CpPythonSpiderRenderer</span>(<span class="hljs-params">mistune.HTMLRenderer</span>):</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span>(<span class="hljs-params">self</span>):</span>
+        <span class="hljs-built_in">super</span>().__init__()
+        <span class="hljs-comment"># 创建一个包加载器对象(也可以使用PackageLoader包加载器的方式加载)</span>
+        self.env = Environment(
+            loader=FileSystemLoader(os.path.join(os.getcwd(), <span class="hljs-string">&#x27;theme/{}/templates&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-string">&#x27;cp_python_spider_wx&#x27;</span>))))
+        <span class="hljs-comment"># 加载各类模板</span>
+        self.h2_template = self.env.get_template(<span class="hljs-string">&#x27;h2.html&#x27;</span>)
+        self.h3_template = self.env.get_template(<span class="hljs-string">&#x27;h3.html&#x27;</span>)
+        self.h4_template = self.env.get_template(<span class="hljs-string">&#x27;h4.html&#x27;</span>)
+        self.p_template = self.env.get_template(<span class="hljs-string">&#x27;p.html&#x27;</span>)
+        self.strong_template = self.env.get_template(<span class="hljs-string">&#x27;strong.html&#x27;</span>)
+        self.blockquote_template = self.env.get_template(<span class="hljs-string">&#x27;blockquote.html&#x27;</span>)
+        self.table_template = self.env.get_template(<span class="hljs-string">&#x27;table.html&#x27;</span>)
+        self.li_template = self.env.get_template(<span class="hljs-string">&#x27;li.html&#x27;</span>)
+        self.ul_template = self.env.get_template(<span class="hljs-string">&#x27;ul.html&#x27;</span>)
+        self.image_template = self.env.get_template(<span class="hljs-string">&#x27;image.html&#x27;</span>)
+        self.link_template = self.env.get_template(<span class="hljs-string">&#x27;link.html&#x27;</span>)
+        self.codespan_template = self.env.get_template(<span class="hljs-string">&#x27;codespan.html&#x27;</span>)
 
-        }
-    }
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">header_render</span>(<span class="hljs-params">self</span>):</span>
+        <span class="hljs-keyword">return</span> self.env.get_template(<span class="hljs-string">&#x27;article_header.html&#x27;</span>).render(author=<span class="hljs-string">&quot;CoderPig&quot;</span>)
 
-    <span class="hljs-keyword">inner</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">OKYAViewHolder</span></span>(view: View): RecyclerView.ViewHolder(view) {
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_cover)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_more_right = view.findViewById&lt;ImageView&gt;(R.id.iv_more_right)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_title)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_sub_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_sub_title)
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">footer_render</span>(<span class="hljs-params">self</span>):</span>
+        <span class="hljs-keyword">return</span> self.env.get_template(<span class="hljs-string">&#x27;article_footer.html&#x27;</span>).render()
 
-        <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">bind</span><span class="hljs-params">(cover: <span class="hljs-type">String</span>)</span></span> {
-            Glide.with(context).load(cover).into(iv_cover)
-            tv_title.text = getTextRes(R.string.okya_lesson_title)
-            tv_sub_title.text = mData.subTitles?.TPI_OKYA_MANAGE_SUBTITLE
-            iv_more_right.setOnClickListener {
-                context.startActivity(Intent(context, OkyaActivity::<span class="hljs-keyword">class</span>.java))
-            }
-            iv_cover.setOnClickListener {
-                context.startActivity(Intent(context, OkyaActivity::<span class="hljs-keyword">class</span>.java))
-            }
-        }
-    }
+    <span class="hljs-comment">#  标题</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">heading</span>(<span class="hljs-params">self, text, level</span>):</span>
+        <span class="hljs-keyword">if</span> level == <span class="hljs-number">2</span>:
+            <span class="hljs-keyword">return</span> self.h2_template.render(text=text)
+        <span class="hljs-keyword">elif</span> level == <span class="hljs-number">3</span>:
+            <span class="hljs-keyword">return</span> self.h3_template.render(text=text)
+        <span class="hljs-keyword">elif</span> level == <span class="hljs-number">4</span>:
+            split_list = text.split(<span class="hljs-string">&quot;：&quot;</span>)
+            <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(split_list) &gt; <span class="hljs-number">0</span>:
+                <span class="hljs-keyword">return</span> self.h4_template.render(order=split_list[<span class="hljs-number">0</span>], text=split_list[<span class="hljs-number">1</span>])
+            <span class="hljs-keyword">return</span> self.h4_template.render(text=text)
+        <span class="hljs-keyword">else</span>:
+            <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;&lt;h{}&gt;{}&lt;/h{}&gt;&lt;br&gt;&quot;</span>.<span class="hljs-built_in">format</span>(level, text, level)
 
-    <span class="hljs-keyword">inner</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">VideoViewHolder</span></span>(view: View): RecyclerView.ViewHolder(view) {
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_title)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_sub_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_sub_title)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> cv_first = view.findViewById&lt;CardView&gt;(R.id.cv_first)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_first_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_first_cover)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_first_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_first_title)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_first_desc = view.findViewById&lt;EnTextView&gt;(R.id.tv_first_desc)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_first_vip_tag = view.findViewById&lt;ImageView&gt;(R.id.iv_first_vip_tag)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> cv_second = view.findViewById&lt;CardView&gt;(R.id.cv_second)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_second_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_second_cover)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_second_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_second_title)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_second_desc = view.findViewById&lt;EnTextView&gt;(R.id.tv_second_desc)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_second_vip_tag = view.findViewById&lt;ImageView&gt;(R.id.iv_second_vip_tag)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> cv_third = view.findViewById&lt;CardView&gt;(R.id.cv_third)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_third_cover = view.findViewById&lt;ImageView&gt;(R.id.iv_third_cover)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_third_title = view.findViewById&lt;EnTextView&gt;(R.id.tv_third_title)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> tv_third_desc = view.findViewById&lt;EnTextView&gt;(R.id.tv_third_desc)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_third_vip_tag = view.findViewById&lt;ImageView&gt;(R.id.iv_third_vip_tag)
-        <span class="hljs-keyword">private</span> <span class="hljs-keyword">val</span> iv_more_right = view.findViewById&lt;ImageView&gt;(R.id.iv_more_right)
+    <span class="hljs-comment"># 粗体</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">strong</span>(<span class="hljs-params">self, text</span>):</span>
+        <span class="hljs-keyword">return</span> self.strong_template.render(text=text)
 
-        <span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">bind</span><span class="hljs-params">(<span class="hljs-keyword">data</span>: <span class="hljs-type">ArrayList</span>&lt;<span class="hljs-type">VideoAlbum</span>&gt;)</span></span> {
-            tv_title.text = <span class="hljs-string">&quot;精彩视频&quot;</span>
-            tv_sub_title.text = mData.subTitles?.WONDERFUL_VIDEO_SUBTITLE
-            iv_more_right.setOnClickListener {
-                context.startActivity(Intent(context, FeaturedVideoActivity::<span class="hljs-keyword">class</span>.java))
-            }
-            <span class="hljs-keyword">val</span> dataSize = <span class="hljs-keyword">data</span>.size
-            cv_first.visibility = View.INVISIBLE
-            cv_second.visibility = View.INVISIBLE
-            cv_third.visibility = View.INVISIBLE
-            <span class="hljs-keyword">if</span>(dataSize &gt;= <span class="hljs-number">1</span>) {
-                <span class="hljs-keyword">val</span> data1 = <span class="hljs-keyword">data</span>[<span class="hljs-number">0</span>]
-                Glide.with(context).load(data1.coverUrl).into(iv_first_cover)
-                tv_first_title.text = data1.title
-                tv_first_desc.text = data1.subTitle
-                cv_first.visibility = View.VISIBLE
-                iv_first_vip_tag.visibility = <span class="hljs-keyword">if</span>(data1.vipState == <span class="hljs-number">1</span>) View.VISIBLE <span class="hljs-keyword">else</span> View.INVISIBLE
-                cv_first.setOnClickListener {
-                    <span class="hljs-keyword">val</span> intent = Intent(context, VideoPlayerActivity::<span class="hljs-keyword">class</span>.java)
-                    intent.putExtra(<span class="hljs-string">&quot;videoAlbumId&quot;</span>, data1.videoAlbumId)
-                    context.startActivity(intent)
-                }
-                <span class="hljs-keyword">if</span>(dataSize &gt;= <span class="hljs-number">2</span>) {
-                    <span class="hljs-keyword">val</span> data2 = <span class="hljs-keyword">data</span>[<span class="hljs-number">1</span>]
-                    Glide.with(context).load(data2.coverUrl).into(iv_second_cover)
-                    tv_second_title.text = data2.title
-                    tv_second_desc.text = data2.subTitle
-                    cv_second.visibility = View.VISIBLE
-                    iv_second_vip_tag.visibility = <span class="hljs-keyword">if</span>(data2.vipState == <span class="hljs-number">1</span>) View.VISIBLE <span class="hljs-keyword">else</span> View.INVISIBLE
-                    cv_second.setOnClickListener {
-                        <span class="hljs-keyword">val</span> intent = Intent(context, VideoPlayerActivity::<span class="hljs-keyword">class</span>.java)
-                        intent.putExtra(<span class="hljs-string">&quot;videoAlbumId&quot;</span>, data2.videoAlbumId)
-                        context.startActivity(intent)
-                    }
-                    <span class="hljs-keyword">if</span>(dataSize &gt;= <span class="hljs-number">3</span>) {
-                        <span class="hljs-keyword">val</span> data3 = <span class="hljs-keyword">data</span>[<span class="hljs-number">2</span>]
-                        Glide.with(context).load(data3.coverUrl).into(iv_third_cover)
-                        tv_third_title.text = data3.title
-                        tv_third_desc.text = data3.subTitle
-                        cv_third.visibility = View.VISIBLE
-                        iv_third_vip_tag.visibility = <span class="hljs-keyword">if</span>(data3.vipState == <span class="hljs-number">1</span>) View.VISIBLE <span class="hljs-keyword">else</span> View.INVISIBLE
-                        cv_third.setOnClickListener {
-                            <span class="hljs-keyword">val</span> intent = Intent(context, VideoPlayerActivity::<span class="hljs-keyword">class</span>.java)
-                            intent.putExtra(<span class="hljs-string">&quot;videoAlbumId&quot;</span>, data3.videoAlbumId)
-                            context.startActivity(intent)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+    <span class="hljs-comment"># 行内代码</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">codespan</span>(<span class="hljs-params">self, text</span>):</span>
+        <span class="hljs-comment"># 如果有**开头说明字体需加粗</span>
+        <span class="hljs-keyword">if</span> text.startswith(<span class="hljs-string">&quot;**&quot;</span>):
+            text = self.codespan_template.render(text=<span class="hljs-string">&#x27;&lt;strong&gt;{}&lt;/strong&gt;&#x27;</span>.<span class="hljs-built_in">format</span>(text[<span class="hljs-number">2</span>: -<span class="hljs-number">2</span>]))
+        <span class="hljs-keyword">return</span> self.codespan_template.render(text=text)
+
+    <span class="hljs-comment"># 引用</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">block_quote</span>(<span class="hljs-params">self, text</span>):</span>
+        is_ul = <span class="hljs-literal">False</span>  <span class="hljs-comment"># 是否为列表类型</span>
+        <span class="hljs-comment"># 判断是否为列表，是去掉换行</span>
+        <span class="hljs-keyword">if</span> text.startswith(<span class="hljs-string">&quot;&lt;br&gt;&quot;</span>):
+            is_ul = <span class="hljs-literal">True</span>
+            text = text.replace(<span class="hljs-string">&quot;&lt;br&gt;&quot;</span>, <span class="hljs-string">&quot;&quot;</span>)
+        <span class="hljs-comment">#  如果是&lt;section&gt;开头说明前面先被段落渲染过，提取文本</span>
+        <span class="hljs-keyword">if</span> text.startswith(<span class="hljs-string">&quot;&lt;section&gt;&quot;</span>):
+            section_selector = etree.HTML(text)
+            spans = section_selector.xpath(<span class="hljs-string">&quot;descendant::span&quot;</span>)
+            text_result = <span class="hljs-string">&#x27;&#x27;</span>
+            <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(spans) &gt; <span class="hljs-number">0</span>:
+                <span class="hljs-keyword">for</span> span <span class="hljs-keyword">in</span> spans:
+                    text_result += self.blockquote_template.render(text=span.text)
+            print(text_result[:-<span class="hljs-number">4</span>] <span class="hljs-keyword">if</span> text_result.endswith(<span class="hljs-string">&quot;&lt;br&gt;&quot;</span>) <span class="hljs-keyword">else</span> text_result)
+            <span class="hljs-keyword">return</span> text_result
+        render_result = self.blockquote_template.render(text=text)
+        <span class="hljs-keyword">if</span> is_ul:
+            render_result = render_result.replace(<span class="hljs-string">&#x27;&lt;span style=&quot;letter-spacing: 1px; margin-left: 0.5em&quot;&gt;&lt;ul&#x27;</span>, <span class="hljs-string">&quot;&lt;ul&quot;</span>)
+            render_result = render_result.replace(<span class="hljs-string">&#x27;&lt;/ul&gt;&lt;/span&gt;&#x27;</span>, <span class="hljs-string">&quot;&lt;/ul&gt;&quot;</span>)
+
+        <span class="hljs-keyword">return</span> render_result
+
+    <span class="hljs-comment"># 段落</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">paragraph</span>(<span class="hljs-params">self, text</span>):</span>
+        <span class="hljs-keyword">return</span> self.p_template.render(text=text)
+
+    <span class="hljs-comment"># 列表</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">list</span>(<span class="hljs-params">self, text, ordered, level, start=<span class="hljs-literal">None</span></span>):</span>
+        <span class="hljs-keyword">return</span> self.ul_template.render(text=text)
+
+    <span class="hljs-comment"># 列表项</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">list_item</span>(<span class="hljs-params">self, text, level</span>):</span>
+        <span class="hljs-keyword">return</span> self.li_template.render(text=text)
+
+    <span class="hljs-comment"># 表格处理</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">table</span>(<span class="hljs-params">self, text</span>):</span>
+        table_selector = etree.HTML(text.replace(<span class="hljs-string">&quot;&lt;code&gt;&quot;</span>, <span class="hljs-string">&quot;&quot;</span>).replace(<span class="hljs-string">&quot;&lt;/code&gt;&quot;</span>, <span class="hljs-string">&quot;&quot;</span>))
+        table_headers = table_selector.xpath(<span class="hljs-string">&#x27;//tr/th&#x27;</span>)
+        table_details = table_selector.xpath(<span class="hljs-string">&#x27;//tr/td&#x27;</span>)
+        cell_header_list = []
+        <span class="hljs-keyword">for</span> index, values <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(table_headers):
+            style = values.attrib.get(<span class="hljs-string">&#x27;style&#x27;</span>)
+            text = values.text
+            cell_header_list.append(
+                Cell(text.replace(<span class="hljs-string">&quot; &quot;</span>, <span class="hljs-string">&quot;&quot;</span>) <span class="hljs-keyword">if</span> text <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span> <span class="hljs-keyword">else</span> <span class="hljs-literal">None</span>,
+                     <span class="hljs-literal">None</span> <span class="hljs-keyword">if</span> style <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span> <span class="hljs-keyword">else</span> style[<span class="hljs-number">11</span>:],
+                     <span class="hljs-literal">True</span> <span class="hljs-keyword">if</span> (index % <span class="hljs-number">2</span> == <span class="hljs-number">0</span>) <span class="hljs-keyword">else</span> <span class="hljs-literal">False</span>))
+        cell_detail_list = []
+        <span class="hljs-keyword">for</span> index, values <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(table_details):
+            style = values.attrib.get(<span class="hljs-string">&#x27;style&#x27;</span>)
+            text = values.text
+            cell_detail_list.append(
+                Cell(text.replace(<span class="hljs-string">&quot; &quot;</span>, <span class="hljs-string">&quot;&quot;</span>) <span class="hljs-keyword">if</span> text <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span> <span class="hljs-keyword">else</span> <span class="hljs-literal">None</span>,
+                     <span class="hljs-literal">None</span> <span class="hljs-keyword">if</span> style <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span> <span class="hljs-keyword">else</span> style[<span class="hljs-number">11</span>:],
+                     <span class="hljs-literal">True</span> <span class="hljs-keyword">if</span> (index % <span class="hljs-number">2</span> == <span class="hljs-number">0</span>) <span class="hljs-keyword">else</span> <span class="hljs-literal">False</span>))
+        <span class="hljs-keyword">return</span> self.table_template.render(header_list=cell_header_list, detail_list=cell_detail_list)
+
+    <span class="hljs-comment"># 代码块</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">block_code</span>(<span class="hljs-params">self, code, info=<span class="hljs-literal">None</span></span>):</span>
+        lexer = get_lexer_by_name(info <span class="hljs-keyword">if</span> info <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span> <span class="hljs-keyword">else</span> <span class="hljs-string">&#x27;Python&#x27;</span>, stripall=<span class="hljs-literal">True</span>)
+        formatter = html.HtmlFormatter(noclasses=<span class="hljs-literal">True</span>, style=<span class="hljs-string">&#x27;perldoc&#x27;</span>, wrapcode=<span class="hljs-literal">True</span>)
+        highlight_html = highlight(code, lexer, formatter).replace(<span class="hljs-string">&#x27;div&#x27;</span>, <span class="hljs-string">&#x27;section&#x27;</span>)
+        <span class="hljs-comment"># 行尾塞换行符，行首塞&amp;nbsp;</span>
+        highlight_html_result = <span class="hljs-string">&#x27;&#x27;</span>
+        lines = highlight_html.split(<span class="hljs-string">&quot;\n&quot;</span>)
+        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(lines) &gt; <span class="hljs-number">0</span>:
+            <span class="hljs-keyword">for</span> index, line <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(lines):
+                <span class="hljs-keyword">if</span> line == <span class="hljs-string">&#x27;&#x27;</span> <span class="hljs-keyword">and</span> index == <span class="hljs-built_in">len</span>(lines) - <span class="hljs-number">1</span>:
+                    <span class="hljs-keyword">break</span>
+                <span class="hljs-keyword">else</span>:
+                    <span class="hljs-comment"># 获取左侧空格数量</span>
+                    left_blank_count = <span class="hljs-number">0</span>
+                    <span class="hljs-keyword">for</span> c <span class="hljs-keyword">in</span> line:
+                        <span class="hljs-keyword">if</span> c == <span class="hljs-string">&#x27; &#x27;</span>:
+                            left_blank_count += <span class="hljs-number">1</span>
+                        <span class="hljs-keyword">else</span>:
+                            <span class="hljs-keyword">break</span>
+                highlight_html_result += <span class="hljs-string">&#x27;{}{}&lt;br&gt;&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-string">&#x27;&amp;nbsp;&#x27;</span> * left_blank_count, line.lstrip())
+        highlight_selector = etree.HTML(highlight_html_result)
+        <span class="hljs-comment"># 创建一个包裹code节点下所有元素的节点，同时设置字体大小</span>
+        span_node = etree.Element(<span class="hljs-string">&#x27;span&#x27;</span>, {<span class="hljs-string">&#x27;style&#x27;</span>: <span class="hljs-string">&#x27;font-size: 12px;&#x27;</span>})
+        <span class="hljs-comment"># 遍历code里所有的节点，添加到外层span中，清空code子节点，添加这个span结点</span>
+        code_node = highlight_selector.xpath(<span class="hljs-string">&quot;//code&quot;</span>)
+        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(code_node) &gt; <span class="hljs-number">0</span>:
+            node_list = code_node[<span class="hljs-number">0</span>].xpath(<span class="hljs-string">&#x27;child::*&#x27;</span>)
+            <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> node_list:
+                style = node.attrib.get(<span class="hljs-string">&#x27;style&#x27;</span>)
+                <span class="hljs-keyword">if</span> style <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:
+                    node.attrib[<span class="hljs-string">&#x27;style&#x27;</span>] = <span class="hljs-string">&#x27;font-size: 12px; &#x27;</span> + style
+                    <span class="hljs-keyword">if</span> node.text.endswith(<span class="hljs-string">&#x27;\n&#x27;</span>):
+                        print(<span class="hljs-string">&quot;换行&quot;</span>)
+                span_node.append(node)
+            <span class="hljs-comment"># 清空code节点</span>
+            code_text = code_node[<span class="hljs-number">0</span>].text
+            code_node[<span class="hljs-number">0</span>].clear()
+            <span class="hljs-comment"># code节点设置水平滚动条、边距等</span>
+            code_node[<span class="hljs-number">0</span>].attrib[<span class="hljs-string">&#x27;style&#x27;</span>] = <span class="hljs-string">&#x27;display: block; padding: 5.95px; overflow-x: auto; white-space:nowrap;&#x27;</span>
+            span_node.text = code_text
+            code_node[<span class="hljs-number">0</span>].append(span_node)
+        <span class="hljs-comment"># etree生成的html会带上&lt;html&gt;&lt;body&gt;标签，利用游标范围过滤，同时替换div标签为section</span>
+        <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&lt;br&gt;&#x27;</span> + etree.tostring(highlight_selector).decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>)[<span class="hljs-number">12</span>: -<span class="hljs-number">14</span>].replace(<span class="hljs-string">&quot;div&quot;</span>, <span class="hljs-string">&quot;section&quot;</span>)
+
+    <span class="hljs-comment"># 超链接</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">link</span>(<span class="hljs-params">self, link, text=<span class="hljs-literal">None</span>, title=<span class="hljs-literal">None</span></span>):</span>
+        <span class="hljs-keyword">return</span> self.link_template.render(text=text, link=link)
+
+    <span class="hljs-comment"># 图片</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">image</span>(<span class="hljs-params">self, src, alt=<span class="hljs-string">&quot;&quot;</span>, title=<span class="hljs-literal">None</span></span>):</span>
+        <span class="hljs-keyword">return</span> self.image_template.render(src=src)
+

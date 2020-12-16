@@ -29,7 +29,6 @@ def renderer_by_node(content, theme, language=None):
     node_command = 'node {}'.format(js_path)
     if language is not None:
         node_command += " " + language
-    print(node_command)
     os.system(node_command)
     result = ''
     with open(after_path, "r+", encoding='utf-8') as f:

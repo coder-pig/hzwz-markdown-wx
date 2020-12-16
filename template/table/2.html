@@ -1,0 +1,12 @@
+<table>
+    <tbody>{%- set width= (577 - 20 * row_count) / row_count -%}
+    <tr>
+        {%- for header in header_list -%}
+        <td width="{{ width }}" valign="top" style="word-break: break-all;" align="{{ header.align }}">
+            <span style="font-size: 15px;"><strong>{{ header.text }}<br></strong></span>
+        </td>
+        {%- endfor -%}
+    </tr>
+    </tbody>
+</table>
+

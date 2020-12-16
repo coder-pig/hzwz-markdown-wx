@@ -1,0 +1,13 @@
+<p style="text-indent: 0em;white-space: normal;text-align: start;widows: 1;line-height: 1.75em;">
+    <span style="letter-spacing: 1px;font-size: 12px;color: rgb(198, 91, 218);">
+        {%- if text is not none -%}
+            {%- if text == link -%}
+                {{link}}
+            {%- else -%}
+                {{text}}:<br>{{link}}
+            {%- endif -%}
+        {%- else -%}
+            {{link}}
+        {%- endif -%}
+    </span>
+</p>

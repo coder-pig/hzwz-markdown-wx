@@ -1,299 +1,195 @@
-package com.qitianzhen.skradio.ui.index
+# -*- coding: utf-8 -*-
+# !/usr/bin/env python
+"""
+-------------------------------------------------
+   File     : CpPythonSpiderRenderer.py
+   Author   : CoderPig
+   date     : 2020-11-27 14:13 
+   Desc     : 抠腚男孩 → Python爬虫系列样式 → https://mp.weixin.qq.com/s/why-ikTbbiCG4uzGer48IQ
+-------------------------------------------------
+"""
+import os
 
-import android.content.Context
-import android.content.Intent
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.ImageView
-import androidx.cardview.widget.CardView
-import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.bumptech.glide.request.RequestOptions
-import com.qitianzhen.skradio.R
-import com.qitianzhen.skradio.data.Banner
-import com.qitianzhen.skradio.data.IndexDataResult
-import com.qitianzhen.skradio.data.MusicMenu
-import com.qitianzhen.skradio.data.VideoAlbum
-import com.qitianzhen.skradio.entity.CategoryMenu
-import com.qitianzhen.skradio.ui.featured.FeaturedVideoActivity
-import com.qitianzhen.skradio.ui.featured.VideoPlayerActivity
-import com.qitianzhen.skradio.ui.music.MusicListActivity
-import com.qitianzhen.skradio.ui.music.MusicListDetailActivity
-import com.qitianzhen.skradio.ui.okya.lesson.OkyaActivity
-import com.qitianzhen.skradio.ui.qtz.QtzMusicActivity
-import com.qitianzhen.skradio.utils.dp2px
-import com.qitianzhen.skradio.utils.getTextRes
-import com.qitianzhen.skradio.widget.EnTextView
-import kotlinx.android.synthetic.main.item_index_banner.view.*
+import mistune
+from jinja2 import Environment, FileSystemLoader
+from lxml import etree
+from pygments import highlight
+from pygments.formatters import html
+from pygments.lexers import get_lexer_by_name
 
 
-/**
- * @Author CoderPig
- * @Desc: 首页Adapter
- * @CreateDate: Create in 2020-01-16 14:39
- */
-class IndexAdapter(var context: Context)  : RecyclerView.Adapter<RecyclerView.ViewHolder>()  {
-    companion object {
-        private const val BANNER_ITEM = 0    // Banner
-        private const val QZT_ITEM = 1    // 七田真专区
-        private const val GROWTH_ITEM = 2    // 成长频道
-        private const val OKYA_ITEM = 3    // 成长频道
-        private const val VIDEO_ITEM = 4    // 精彩视频
-    }
+# 表格单元格
+class Cell:
+    text = None
+    align = None
+    is_head = False
 
-    private var mData: IndexDataResult = IndexDataResult(null,null,null,null, null, "","")
-    private var currentType = BANNER_ITEM    // 当前Item
-
-    fun refresh(data: IndexDataResult) {
-        mData = data
-        notifyDataSetChanged()
-    }
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return when(viewType) {
-            QZT_ITEM -> QtzViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_qtz, parent, false))
-            GROWTH_ITEM -> GrowthViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_growth, parent, false))
-            OKYA_ITEM -> OKYAViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_okya, parent, false))
-            VIDEO_ITEM -> VideoViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_video, parent, false))
-            else -> BannerViewHolder(LayoutInflater.from(context).inflate(R.layout.item_index_banner, parent, false))
-        }
-    }
-
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        when(position) {
-            BANNER_ITEM -> { mData.banners?.let { (holder as BannerViewHolder).bind(it) } }
-            QZT_ITEM -> { mData.tpiMusicMenuRes?.let { (holder as QtzViewHolder).bind(mData.tpiImageUrl) } }
-            GROWTH_ITEM -> { mData.musicMenuRes?.let { (holder as GrowthViewHolder).bind(it) } }
-            OKYA_ITEM -> {  (holder as OKYAViewHolder).bind(mData.okyaManageImageUrl)  }
-            VIDEO_ITEM -> { mData.videoAlbums?.let { (holder as VideoViewHolder).bind(it) } }
-        }
-    }
-
-    override fun getItemViewType(position: Int): Int {
-        when(position) {
-            BANNER_ITEM -> currentType = BANNER_ITEM
-            QZT_ITEM -> currentType = QZT_ITEM
-            GROWTH_ITEM -> currentType = GROWTH_ITEM
-            OKYA_ITEM -> currentType = OKYA_ITEM
-            VIDEO_ITEM -> currentType = VIDEO_ITEM
-        }
-        return currentType
-    }
-
-    override fun getItemCount(): Int = 5
-
-    inner class BannerViewHolder(view: View): RecyclerView.ViewHolder(view) {
-        private val iv_banner = view.iv_banner
-
-        fun bind(data: ArrayList<Banner>) {
-            if(data.size > 0) {
-                Glide.with(context).load(data[0].imageUrl)
-                    .apply(RequestOptions.bitmapTransform(RoundedCorners(dp2px(24.0f))))
-                    .into(iv_banner)
-                iv_banner.setOnClickListener {
-                    val intent = Intent(context, BannerDetailActivity::class.java)
-                    intent.putExtra("detailImageUrls", data[0].detailImageUrls)
-                    context.startActivity(intent)
-                }
-            }
-        }
-    }
-
-    inner class QtzViewHolder(view: View): RecyclerView.ViewHolder(view) {
-        private val iv_cover = view.findViewById<ImageView>(R.id.iv_cover)
-        private val iv_more_right = view.findViewById<ImageView>(R.id.iv_more_right)
-        private val tv_title = view.findViewById<EnTextView>(R.id.tv_title)
-        private val tv_sub_title = view.findViewById<EnTextView>(R.id.tv_sub_title)
-
-        fun bind(cover: String) {
-            tv_title.text = "七田真专区"
-            tv_sub_title.text = mData.subTitles?.TPI_MUSIC_MENU_SUBTITLE
-            Glide.with(context).load(cover).into(iv_cover)
-            iv_more_right.setOnClickListener {
-                context.startActivity(Intent(context, QtzMusicActivity::class.java))
-            }
-            iv_cover.setOnClickListener {
-                context.startActivity(Intent(context, QtzMusicActivity::class.java))
-            }
-        }
-    }
-
-    inner class GrowthViewHolder(view: View): RecyclerView.ViewHolder(view) {
-        private val tv_title = view.findViewById<EnTextView>(R.id.tv_title)
-        private val tv_sub_title = view.findViewById<EnTextView>(R.id.tv_sub_title)
-        private val cv_first = view.findViewById<CardView>(R.id.cv_first)
-        private val iv_first_cover = view.findViewById<ImageView>(R.id.iv_first_cover)
-        private val tv_first_title = view.findViewById<EnTextView>(R.id.tv_first_title)
-        private val tv_first_desc = view.findViewById<EnTextView>(R.id.tv_first_desc)
-        private val iv_first_vip_tag = view.findViewById<ImageView>(R.id.iv_first_vip_tag)
-        private val cv_second = view.findViewById<CardView>(R.id.cv_second)
-        private val iv_second_cover = view.findViewById<ImageView>(R.id.iv_second_cover)
-        private val tv_second_title = view.findViewById<EnTextView>(R.id.tv_second_title)
-        private val tv_second_desc = view.findViewById<EnTextView>(R.id.tv_second_desc)
-        private val iv_second_vip_tag = view.findViewById<ImageView>(R.id.iv_second_vip_tag)
-        private val cv_third = view.findViewById<CardView>(R.id.cv_third)
-        private val iv_third_cover = view.findViewById<ImageView>(R.id.iv_third_cover)
-        private val tv_third_title = view.findViewById<EnTextView>(R.id.tv_third_title)
-        private val tv_third_desc = view.findViewById<EnTextView>(R.id.tv_third_desc)
-        private val iv_third_vip_tag = view.findViewById<ImageView>(R.id.iv_third_vip_tag)
-        private val iv_more_right = view.findViewById<ImageView>(R.id.iv_more_right)
+    def __init__(self, text, align, is_left):
+        self.text = text
+        self.align = align
+        self.is_left = is_left
 
 
-        fun bind(data: ArrayList<MusicMenu>) {
-            tv_title.text = "成长歌单"
-            tv_sub_title.text = mData.subTitles?.RECOMMEND_MUSIC_MENU_SUBTITLE
-            iv_more_right.setOnClickListener {
-                context.startActivity(Intent(context, MusicListActivity::class.java))
-            }
-            val dataSize = data.size
-            cv_first.visibility = View.INVISIBLE
-            cv_second.visibility = View.INVISIBLE
-            cv_third.visibility = View.INVISIBLE
-            if(dataSize >= 1) {
-                val musicMenu1 = data[0]
-                Glide.with(context).load(musicMenu1.coverUrl).into(iv_first_cover)
-                tv_first_title.text = musicMenu1.title
-                tv_first_desc.text = musicMenu1.subTitle
-                cv_first.visibility = View.VISIBLE
-                iv_first_vip_tag.visibility = if(musicMenu1.vipState == 1) View.VISIBLE else View.INVISIBLE
-                cv_first.setOnClickListener {
-                    val intent = Intent(context, MusicListDetailActivity::class.java)
-                    val categoryMenu = CategoryMenu(
-                        musicMenu1.musicMenuId, musicMenu1.categoryId, musicMenu1.menuType, musicMenu1.coverUrl,
-                        musicMenu1.title, musicMenu1.subTitle, musicMenu1.songsCount, musicMenu1.sequence, musicMenu1.vipState,
-                        musicMenu1.loginState, musicMenu1.publishState, musicMenu1.description, musicMenu1.heatLevel)
-                    intent.putExtra("categoryMenu", categoryMenu)
-                    context.startActivity(intent)
-                }
-                if(dataSize >= 2) {
-                    val musicMenu2 = data[1]
-                    Glide.with(context).load(musicMenu2.coverUrl).into(iv_second_cover)
-                    tv_second_title.text = musicMenu2.title
-                    tv_second_desc.text = musicMenu2.subTitle
-                    cv_second.visibility = View.VISIBLE
-                    iv_second_vip_tag.visibility = if(musicMenu2.vipState == 1) View.VISIBLE else View.INVISIBLE
-                    cv_second.setOnClickListener {
-                        val intent = Intent(context, MusicListDetailActivity::class.java)
-                        val categoryMenu = CategoryMenu(
-                            musicMenu2.musicMenuId, musicMenu2.categoryId, musicMenu2.menuType, musicMenu2.coverUrl,
-                            musicMenu2.title, musicMenu2.subTitle, musicMenu2.songsCount, musicMenu2.sequence, musicMenu2.vipState,
-                            musicMenu2.loginState, musicMenu2.publishState, musicMenu2.description, musicMenu2.heatLevel)
-                        intent.putExtra("categoryMenu", categoryMenu)
-                        context.startActivity(intent)
-                    }
-                    if(dataSize >= 3) {
-                        val musicMenu3 = data[2]
-                        Glide.with(context).load(musicMenu3.coverUrl).into(iv_third_cover)
-                        tv_third_title.text = musicMenu3.title
-                        tv_third_desc.text = musicMenu3.subTitle
-                        cv_third.visibility = View.VISIBLE
-                        iv_third_vip_tag.visibility = if(musicMenu3.vipState == 1) View.VISIBLE else View.INVISIBLE
-                        cv_third.setOnClickListener {
-                            val intent = Intent(context, MusicListDetailActivity::class.java)
-                            val categoryMenu = CategoryMenu(
-                                musicMenu3.musicMenuId, musicMenu3.categoryId, musicMenu3.menuType, musicMenu3.coverUrl,
-                                musicMenu3.title, musicMenu3.subTitle, musicMenu3.songsCount, musicMenu3.sequence, musicMenu3.vipState,
-                                musicMenu3.loginState, musicMenu3.publishState, musicMenu3.description, musicMenu3.heatLevel)
-                            intent.putExtra("categoryMenu", categoryMenu)
-                            context.startActivity(intent)
-                        }
-                    }
-                }
-            }
+class CpPythonSpiderRenderer(mistune.HTMLRenderer):
+    def __init__(self):
+        super().__init__()
+        # 创建一个包加载器对象(也可以使用PackageLoader包加载器的方式加载)
+        self.env = Environment(
+            loader=FileSystemLoader(os.path.join(os.getcwd(), 'theme/{}/templates'.format('cp_python_spider_wx'))))
+        # 加载各类模板
+        self.h2_template = self.env.get_template('h2.html')
+        self.h3_template = self.env.get_template('h3.html')
+        self.h4_template = self.env.get_template('h4.html')
+        self.p_template = self.env.get_template('p.html')
+        self.strong_template = self.env.get_template('strong.html')
+        self.blockquote_template = self.env.get_template('blockquote.html')
+        self.table_template = self.env.get_template('table.html')
+        self.li_template = self.env.get_template('li.html')
+        self.ul_template = self.env.get_template('ul.html')
+        self.image_template = self.env.get_template('image.html')
+        self.link_template = self.env.get_template('link.html')
+        self.codespan_template = self.env.get_template('codespan.html')
 
-        }
-    }
+    def header_render(self):
+        return self.env.get_template('article_header.html').render(author="CoderPig")
 
-    inner class OKYAViewHolder(view: View): RecyclerView.ViewHolder(view) {
-        private val iv_cover = view.findViewById<ImageView>(R.id.iv_cover)
-        private val iv_more_right = view.findViewById<ImageView>(R.id.iv_more_right)
-        private val tv_title = view.findViewById<EnTextView>(R.id.tv_title)
-        private val tv_sub_title = view.findViewById<EnTextView>(R.id.tv_sub_title)
+    def footer_render(self):
+        return self.env.get_template('article_footer.html').render()
 
-        fun bind(cover: String) {
-            Glide.with(context).load(cover).into(iv_cover)
-            tv_title.text = getTextRes(R.string.okya_lesson_title)
-            tv_sub_title.text = mData.subTitles?.TPI_OKYA_MANAGE_SUBTITLE
-            iv_more_right.setOnClickListener {
-                context.startActivity(Intent(context, OkyaActivity::class.java))
-            }
-            iv_cover.setOnClickListener {
-                context.startActivity(Intent(context, OkyaActivity::class.java))
-            }
-        }
-    }
+    #  标题
+    def heading(self, text, level):
+        if level == 2:
+            return self.h2_template.render(text=text)
+        elif level == 3:
+            return self.h3_template.render(text=text)
+        elif level == 4:
+            split_list = text.split("：")
+            if len(split_list) > 0:
+                return self.h4_template.render(order=split_list[0], text=split_list[1])
+            return self.h4_template.render(text=text)
+        else:
+            return "<h{}>{}</h{}><br>".format(level, text, level)
 
-    inner class VideoViewHolder(view: View): RecyclerView.ViewHolder(view) {
-        private val tv_title = view.findViewById<EnTextView>(R.id.tv_title)
-        private val tv_sub_title = view.findViewById<EnTextView>(R.id.tv_sub_title)
-        private val cv_first = view.findViewById<CardView>(R.id.cv_first)
-        private val iv_first_cover = view.findViewById<ImageView>(R.id.iv_first_cover)
-        private val tv_first_title = view.findViewById<EnTextView>(R.id.tv_first_title)
-        private val tv_first_desc = view.findViewById<EnTextView>(R.id.tv_first_desc)
-        private val iv_first_vip_tag = view.findViewById<ImageView>(R.id.iv_first_vip_tag)
-        private val cv_second = view.findViewById<CardView>(R.id.cv_second)
-        private val iv_second_cover = view.findViewById<ImageView>(R.id.iv_second_cover)
-        private val tv_second_title = view.findViewById<EnTextView>(R.id.tv_second_title)
-        private val tv_second_desc = view.findViewById<EnTextView>(R.id.tv_second_desc)
-        private val iv_second_vip_tag = view.findViewById<ImageView>(R.id.iv_second_vip_tag)
-        private val cv_third = view.findViewById<CardView>(R.id.cv_third)
-        private val iv_third_cover = view.findViewById<ImageView>(R.id.iv_third_cover)
-        private val tv_third_title = view.findViewById<EnTextView>(R.id.tv_third_title)
-        private val tv_third_desc = view.findViewById<EnTextView>(R.id.tv_third_desc)
-        private val iv_third_vip_tag = view.findViewById<ImageView>(R.id.iv_third_vip_tag)
-        private val iv_more_right = view.findViewById<ImageView>(R.id.iv_more_right)
+    # 粗体
+    def strong(self, text):
+        return self.strong_template.render(text=text)
 
-        fun bind(data: ArrayList<VideoAlbum>) {
-            tv_title.text = "精彩视频"
-            tv_sub_title.text = mData.subTitles?.WONDERFUL_VIDEO_SUBTITLE
-            iv_more_right.setOnClickListener {
-                context.startActivity(Intent(context, FeaturedVideoActivity::class.java))
-            }
-            val dataSize = data.size
-            cv_first.visibility = View.INVISIBLE
-            cv_second.visibility = View.INVISIBLE
-            cv_third.visibility = View.INVISIBLE
-            if(dataSize >= 1) {
-                val data1 = data[0]
-                Glide.with(context).load(data1.coverUrl).into(iv_first_cover)
-                tv_first_title.text = data1.title
-                tv_first_desc.text = data1.subTitle
-                cv_first.visibility = View.VISIBLE
-                iv_first_vip_tag.visibility = if(data1.vipState == 1) View.VISIBLE else View.INVISIBLE
-                cv_first.setOnClickListener {
-                    val intent = Intent(context, VideoPlayerActivity::class.java)
-                    intent.putExtra("videoAlbumId", data1.videoAlbumId)
-                    context.startActivity(intent)
-                }
-                if(dataSize >= 2) {
-                    val data2 = data[1]
-                    Glide.with(context).load(data2.coverUrl).into(iv_second_cover)
-                    tv_second_title.text = data2.title
-                    tv_second_desc.text = data2.subTitle
-                    cv_second.visibility = View.VISIBLE
-                    iv_second_vip_tag.visibility = if(data2.vipState == 1) View.VISIBLE else View.INVISIBLE
-                    cv_second.setOnClickListener {
-                        val intent = Intent(context, VideoPlayerActivity::class.java)
-                        intent.putExtra("videoAlbumId", data2.videoAlbumId)
-                        context.startActivity(intent)
-                    }
-                    if(dataSize >= 3) {
-                        val data3 = data[2]
-                        Glide.with(context).load(data3.coverUrl).into(iv_third_cover)
-                        tv_third_title.text = data3.title
-                        tv_third_desc.text = data3.subTitle
-                        cv_third.visibility = View.VISIBLE
-                        iv_third_vip_tag.visibility = if(data3.vipState == 1) View.VISIBLE else View.INVISIBLE
-                        cv_third.setOnClickListener {
-                            val intent = Intent(context, VideoPlayerActivity::class.java)
-                            intent.putExtra("videoAlbumId", data3.videoAlbumId)
-                            context.startActivity(intent)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+    # 行内代码
+    def codespan(self, text):
+        # 如果有**开头说明字体需加粗
+        if text.startswith("**"):
+            text = self.codespan_template.render(text='<strong>{}</strong>'.format(text[2: -2]))
+        return self.codespan_template.render(text=text)
+
+    # 引用
+    def block_quote(self, text):
+        is_ul = False  # 是否为列表类型
+        # 判断是否为列表，是去掉换行
+        if text.startswith("<br>"):
+            is_ul = True
+            text = text.replace("<br>", "")
+        #  如果是<section>开头说明前面先被段落渲染过，提取文本
+        if text.startswith("<section>"):
+            section_selector = etree.HTML(text)
+            spans = section_selector.xpath("descendant::span")
+            text_result = ''
+            if len(spans) > 0:
+                for span in spans:
+                    text_result += self.blockquote_template.render(text=span.text)
+            print(text_result[:-4] if text_result.endswith("<br>") else text_result)
+            return text_result
+        render_result = self.blockquote_template.render(text=text)
+        if is_ul:
+            render_result = render_result.replace('<span style="letter-spacing: 1px; margin-left: 0.5em"><ul', "<ul")
+            render_result = render_result.replace('</ul></span>', "</ul>")
+
+        return render_result
+
+    # 段落
+    def paragraph(self, text):
+        return self.p_template.render(text=text)
+
+    # 列表
+    def list(self, text, ordered, level, start=None):
+        return self.ul_template.render(text=text)
+
+    # 列表项
+    def list_item(self, text, level):
+        return self.li_template.render(text=text)
+
+    # 表格处理
+    def table(self, text):
+        table_selector = etree.HTML(text.replace("<code>", "").replace("</code>", ""))
+        table_headers = table_selector.xpath('//tr/th')
+        table_details = table_selector.xpath('//tr/td')
+        cell_header_list = []
+        for index, values in enumerate(table_headers):
+            style = values.attrib.get('style')
+            text = values.text
+            cell_header_list.append(
+                Cell(text.replace(" ", "") if text is not None else None,
+                     None if style is None else style[11:],
+                     True if (index % 2 == 0) else False))
+        cell_detail_list = []
+        for index, values in enumerate(table_details):
+            style = values.attrib.get('style')
+            text = values.text
+            cell_detail_list.append(
+                Cell(text.replace(" ", "") if text is not None else None,
+                     None if style is None else style[11:],
+                     True if (index % 2 == 0) else False))
+        return self.table_template.render(header_list=cell_header_list, detail_list=cell_detail_list)
+
+    # 代码块
+    def block_code(self, code, info=None):
+        lexer = get_lexer_by_name(info if info is not None else 'Python', stripall=True)
+        formatter = html.HtmlFormatter(noclasses=True, style='perldoc', wrapcode=True)
+        highlight_html = highlight(code, lexer, formatter).replace('div', 'section')
+        # 行尾塞换行符，行首塞&nbsp;
+        highlight_html_result = ''
+        lines = highlight_html.split("\n")
+        if len(lines) > 0:
+            for index, line in enumerate(lines):
+                if line == '' and index == len(lines) - 1:
+                    break
+                else:
+                    # 获取左侧空格数量
+                    left_blank_count = 0
+                    for c in line:
+                        if c == ' ':
+                            left_blank_count += 1
+                        else:
+                            break
+                highlight_html_result += '{}{}<br>'.format('&nbsp;' * left_blank_count, line.lstrip())
+        highlight_selector = etree.HTML(highlight_html_result)
+        # 创建一个包裹code节点下所有元素的节点，同时设置字体大小
+        span_node = etree.Element('span', {'style': 'font-size: 12px;'})
+        # 遍历code里所有的节点，添加到外层span中，清空code子节点，添加这个span结点
+        code_node = highlight_selector.xpath("//code")
+        if len(code_node) > 0:
+            node_list = code_node[0].xpath('child::*')
+            for node in node_list:
+                style = node.attrib.get('style')
+                if style is not None:
+                    node.attrib['style'] = 'font-size: 12px; ' + style
+                    if node.text.endswith('\n'):
+                        print("换行")
+                span_node.append(node)
+            # 清空code节点
+            code_text = code_node[0].text
+            code_node[0].clear()
+            # code节点设置水平滚动条、边距等
+            code_node[0].attrib['style'] = 'display: block; padding: 5.95px; overflow-x: auto; white-space:nowrap;'
+            span_node.text = code_text
+            code_node[0].append(span_node)
+        # etree生成的html会带上<html><body>标签，利用游标范围过滤，同时替换div标签为section
+        return '<br>' + etree.tostring(highlight_selector).decode('utf-8')[12: -14].replace("div", "section")
+
+    # 超链接
+    def link(self, link, text=None, title=None):
+        return self.link_template.render(text=text, link=link)
+
+    # 图片
+    def image(self, src, alt="", title=None):
+        return self.image_template.render(src=src)
+
