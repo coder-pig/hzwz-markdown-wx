@@ -24,16 +24,3 @@ objReadline.on('close', () => {
     }
     fWrite.write(highlightedCode)
 })
-
-// const read = fs.createReadStream('transform/before.html')
-// const data = [];
-// read.on('data', function (chunk) {
-//     data.push(chunk.toString());
-// });
-// read.on('end', function () {
-//     console.log(data);
-// })
-
-// var args = process.argv.splice(2)
-// const highlightedCode = hljs.highlightAuto(args).value;
-// console.log(highlightedCode);

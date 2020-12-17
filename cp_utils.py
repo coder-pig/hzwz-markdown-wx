@@ -49,6 +49,7 @@ def filter_file_type(file_dir, file_suffix):
     return result_list
 
 
+# 读取文件内容
 def read_file_content(file_path):
     if not os.path.exists(file_path):
         return "文件不存在"
@@ -57,11 +58,13 @@ def read_file_content(file_path):
             return f.read()
 
 
+# 写入文件
 def write_file(content, file_path):
     with open(file_path, "w+", encoding='utf-8') as f:
         f.write(content)
 
 
+# 追加文件
 def write_file_append(content, file_path):
     with open(file_path, "a+", encoding='utf-8') as f:
         f.write(content)

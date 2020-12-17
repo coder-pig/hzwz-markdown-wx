@@ -79,6 +79,9 @@ class StyleRenderer(mistune.HTMLRenderer):
             elif key == 'footer':
                 self.footer_template = self.env.get_template(
                     '/footer/{}.html'.format(value)) if value != 'None' else None
+            elif key == 'background':
+                self.background_template = self.env.get_template(
+                    '/background/{}.html'.format(value)) if value != 'None' else None
 
     # 分级标题
     def heading(self, text, level):
@@ -211,6 +214,13 @@ class StyleRenderer(mistune.HTMLRenderer):
         else:
             return ''
 
+    # 背景
+    def background(self, text):
+        if self.background_template is not None:
+            return self.background_template.render(text=text)
+        else:
+            return text
+
 
 def escape(s, quote=True):
     s = s.replace("&", "&amp;")
@@ -230,4 +240,4 @@ def escape_html(s):
 def render_article(content, style_ini_path):
     render = StyleRenderer(os.path.join(os.getcwd(), style_ini_path))
     content_result = mistune.create_markdown(renderer=render, plugins=[plugin_table])(content)
-    return '{}{}{}'.format(render.header(), content_result, render.footer())
+    return render.background(text='{}{}{}'.format(render.header(), content_result, render.footer()))

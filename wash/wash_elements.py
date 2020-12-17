@@ -34,6 +34,7 @@ pattern_str_list = [
     r'data-id=".*?"',
     r'class=".*?"',
     r'id=".*?"',
+    r'data-mpa-category=".*?"',
     r'data-mpa-template=".*?"',
     r'mpa-from-tpl=".*?"',
     r'data-mpa-powered-by=".*?"',
