@@ -33,5 +33,9 @@ if __name__ == '__main__':
             print("读取文件 →", file_name)
             file_content = cp_utils.read_file_content(md_file_path)
             for theme_file_path in theme_file_path_list:
-                print("应用样式：→", theme_file_path)
-                render_article(file_content, theme_file_path)
+                theme_name = theme_file_path.split(os.sep)[-1][:-4]
+                print("应用样式 →", theme_name)
+                renderer_content = render_article(file_content, theme_file_path)
+                out_file_path = os.path.join(out_dir, file_name.replace(".md", "_{}.html".format(theme_name)))
+                print("输出文件 →", out_file_path)
+                cp_utils.write_file(renderer_content, out_file_path)

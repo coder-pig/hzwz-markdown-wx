@@ -2,194 +2,140 @@
 <span class="hljs-comment"># !/usr/bin/env python</span>
 <span class="hljs-string">&quot;&quot;&quot;
 -------------------------------------------------
-   File     : CpPythonSpiderRenderer.py
+   File     : xzw_spider.py
    Author   : CoderPig
-   date     : 2020-11-27 14:13 
-   Desc     : 抠腚男孩 → Python爬虫系列样式 → https://mp.weixin.qq.com/s/why-ikTbbiCG4uzGer48IQ
+   date     : 2020-12-11 20:05
+   Desc     : 爬取星座屋每日运势保存到csv和Excel中
 -------------------------------------------------
 &quot;&quot;&quot;</span>
+<span class="hljs-keyword">import</span> xlwt
+<span class="hljs-keyword">import</span> xlrd
+<span class="hljs-keyword">import</span> csv
+<span class="hljs-keyword">import</span> requests <span class="hljs-keyword">as</span> r
+<span class="hljs-keyword">from</span> pyquery <span class="hljs-keyword">import</span> PyQuery <span class="hljs-keyword">as</span> pq
+<span class="hljs-keyword">import</span> re
 <span class="hljs-keyword">import</span> os
 
-<span class="hljs-keyword">import</span> mistune
-<span class="hljs-keyword">from</span> jinja2 <span class="hljs-keyword">import</span> Environment, FileSystemLoader
-<span class="hljs-keyword">from</span> lxml <span class="hljs-keyword">import</span> etree
-<span class="hljs-keyword">from</span> pygments <span class="hljs-keyword">import</span> highlight
-<span class="hljs-keyword">from</span> pygments.formatters <span class="hljs-keyword">import</span> html
-<span class="hljs-keyword">from</span> pygments.lexers <span class="hljs-keyword">import</span> get_lexer_by_name
+base_url = <span class="hljs-string">&#x27;https://www.xzw.com/fortune/{}/&#x27;</span>
+<span class="hljs-comment"># 星座后缀列表</span>
+kind_list = [<span class="hljs-string">&#x27;aries&#x27;</span>, <span class="hljs-string">&#x27;taurus&#x27;</span>, <span class="hljs-string">&#x27;gemini&#x27;</span>, <span class="hljs-string">&#x27;cancer&#x27;</span>, <span class="hljs-string">&#x27;leo&#x27;</span>, <span class="hljs-string">&#x27;virgo&#x27;</span>,
+             <span class="hljs-string">&#x27;libra&#x27;</span>, <span class="hljs-string">&#x27;scorpio&#x27;</span>, <span class="hljs-string">&#x27;sagittarius&#x27;</span>, <span class="hljs-string">&#x27;capricorn&#x27;</span>, <span class="hljs-string">&#x27;aquarius&#x27;</span>, <span class="hljs-string">&#x27;pisces&#x27;</span>]
+headers = {
+    <span class="hljs-string">&#x27;User-Agent&#x27;</span>: <span class="hljs-string">&#x27;Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) &#x27;</span>
+                  <span class="hljs-string">&#x27;Chrome/83.0.4103.97 Safari/537.36 &#x27;</span>
+}
+<span class="hljs-comment"># 表头</span>
+name_list = [<span class="hljs-string">&#x27;星座&#x27;</span>, <span class="hljs-string">&#x27;综合运势评分&#x27;</span>, <span class="hljs-string">&#x27;爱情运势评分&#x27;</span>, <span class="hljs-string">&#x27;事业学业评分&#x27;</span>, <span class="hljs-string">&#x27;财富运势评分&#x27;</span>, <span class="hljs-string">&#x27;健康指数&#x27;</span>, <span class="hljs-string">&#x27;商谈指数&#x27;</span>, <span class="hljs-string">&#x27;幸运颜色&#x27;</span>, <span class="hljs-string">&#x27;幸运数字&#x27;</span>,
+             <span class="hljs-string">&#x27;速配星座&#x27;</span>, <span class="hljs-string">&#x27;短评&#x27;</span>, <span class="hljs-string">&#x27;综合运势&#x27;</span>, <span class="hljs-string">&#x27;爱情运势&#x27;</span>, <span class="hljs-string">&#x27;事业学业&#x27;</span>, <span class="hljs-string">&#x27;财富运势&#x27;</span>, <span class="hljs-string">&#x27;健康运势&#x27;</span>]
+
+output_dir = os.path.join(os.getcwd(), <span class="hljs-string">&#x27;out&#x27;</span>)
+csv_file_path = os.path.join(os.path.join(output_dir, <span class="hljs-string">&#x27;constellation.csv&#x27;</span>))
+excel_file_path = os.path.join(os.path.join(output_dir, <span class="hljs-string">&#x27;constellation.xlsx&#x27;</span>))
+
+score_pattern = re.<span class="hljs-built_in">compile</span>(<span class="hljs-string">r&#x27;width:(\d+)px;&#x27;</span>)
 
 
-<span class="hljs-comment"># 表格单元格</span>
-<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Cell</span>:</span>
-    text = <span class="hljs-literal">None</span>
-    align = <span class="hljs-literal">None</span>
-    is_head = <span class="hljs-literal">False</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Constellation</span>:</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span>(<span class="hljs-params">self, constellation=<span class="hljs-literal">None</span>, total_fortune_score=<span class="hljs-literal">None</span>, love_fortune_score=<span class="hljs-literal">None</span>, career_fortune_score=<span class="hljs-literal">None</span>,
+                 wealth_fortune_score=<span class="hljs-literal">None</span>, health_percent=<span class="hljs-literal">None</span>, talk_percent=<span class="hljs-literal">None</span>, lucky_color=<span class="hljs-literal">None</span>, lucky_number=<span class="hljs-literal">None</span>,
+                 match_constellation=<span class="hljs-literal">None</span>, short_comment=<span class="hljs-literal">None</span>, total_fortune=<span class="hljs-literal">None</span>, love_fortune=<span class="hljs-literal">None</span>,
+                 career_fortune=<span class="hljs-literal">None</span>, wealth_fortune=<span class="hljs-literal">None</span>, health=<span class="hljs-literal">None</span></span>):</span>
+        self.constellation = constellation  <span class="hljs-comment"># 星座名</span>
+        self.total_fortune_score = total_fortune_score  <span class="hljs-comment"># 综合运势评分</span>
+        self.love_fortune_score = love_fortune_score  <span class="hljs-comment"># 爱情运势评分</span>
+        self.career_fortune_score = career_fortune_score  <span class="hljs-comment"># 事业学业评分</span>
+        self.wealth_fortune_score = wealth_fortune_score  <span class="hljs-comment"># 财富运势评分</span>
+        self.health_percent = health_percent  <span class="hljs-comment"># 健康指数</span>
+        self.talk_percent = talk_percent  <span class="hljs-comment"># 商谈指数</span>
+        self.lucky_color = lucky_color  <span class="hljs-comment"># 幸运颜色</span>
+        self.lucky_number = lucky_number  <span class="hljs-comment"># 幸运数字</span>
+        self.match_constellation = match_constellation  <span class="hljs-comment"># 速配星座</span>
+        self.short_comment = short_comment  <span class="hljs-comment"># 短评</span>
+        self.total_fortune = total_fortune  <span class="hljs-comment"># 综合运势</span>
+        self.love_fortune = love_fortune  <span class="hljs-comment"># 爱情运势</span>
+        self.career_fortune = career_fortune  <span class="hljs-comment"># 事业学业</span>
+        self.wealth_fortune = wealth_fortune  <span class="hljs-comment"># 财富运势</span>
+        self.health = health  <span class="hljs-comment"># 健康运势</span>
 
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span>(<span class="hljs-params">self, text, align, is_left</span>):</span>
-        self.text = text
-        self.align = align
-        self.is_left = is_left
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">to_list</span>(<span class="hljs-params">self</span>):</span>
+        <span class="hljs-keyword">return</span> [self.constellation, self.total_fortune_score, self.love_fortune_score, self.career_fortune_score,
+                self.wealth_fortune_score,
+                self.health_percent, self.talk_percent, self.lucky_color, self.lucky_number, self.match_constellation,
+                self.short_comment, self.total_fortune, self.love_fortune, self.career_fortune, self.wealth_fortune,
+                self.health]
 
 
-<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">CpPythonSpiderRenderer</span>(<span class="hljs-params">mistune.HTMLRenderer</span>):</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span>(<span class="hljs-params">self</span>):</span>
-        <span class="hljs-built_in">super</span>().__init__()
-        <span class="hljs-comment"># 创建一个包加载器对象(也可以使用PackageLoader包加载器的方式加载)</span>
-        self.env = Environment(
-            loader=FileSystemLoader(os.path.join(os.getcwd(), <span class="hljs-string">&#x27;theme/{}/templates&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-string">&#x27;cp_python_spider_wx&#x27;</span>))))
-        <span class="hljs-comment"># 加载各类模板</span>
-        self.h2_template = self.env.get_template(<span class="hljs-string">&#x27;h2.html&#x27;</span>)
-        self.h3_template = self.env.get_template(<span class="hljs-string">&#x27;h3.html&#x27;</span>)
-        self.h4_template = self.env.get_template(<span class="hljs-string">&#x27;h4.html&#x27;</span>)
-        self.p_template = self.env.get_template(<span class="hljs-string">&#x27;p.html&#x27;</span>)
-        self.strong_template = self.env.get_template(<span class="hljs-string">&#x27;strong.html&#x27;</span>)
-        self.blockquote_template = self.env.get_template(<span class="hljs-string">&#x27;blockquote.html&#x27;</span>)
-        self.table_template = self.env.get_template(<span class="hljs-string">&#x27;table.html&#x27;</span>)
-        self.li_template = self.env.get_template(<span class="hljs-string">&#x27;li.html&#x27;</span>)
-        self.ul_template = self.env.get_template(<span class="hljs-string">&#x27;ul.html&#x27;</span>)
-        self.image_template = self.env.get_template(<span class="hljs-string">&#x27;image.html&#x27;</span>)
-        self.link_template = self.env.get_template(<span class="hljs-string">&#x27;link.html&#x27;</span>)
-        self.codespan_template = self.env.get_template(<span class="hljs-string">&#x27;codespan.html&#x27;</span>)
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">extract_constellation_info</span>(<span class="hljs-params">kind</span>):</span>
+    resp = r.get(base_url.<span class="hljs-built_in">format</span>(kind), headers=headers)
+    print(<span class="hljs-string">&quot;爬取：&quot;</span>, resp.url)
+    <span class="hljs-keyword">if</span> resp <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:
+        doc = pq(resp.text)
+        constellation = Constellation()
+        constellation.constellation = doc(<span class="hljs-string">&#x27;title&#x27;</span>).text()[<span class="hljs-number">0</span>:<span class="hljs-number">3</span>]
+        <span class="hljs-keyword">for</span> index, li <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(doc(<span class="hljs-string">&#x27;dl li&#x27;</span>).items()):
+            <span class="hljs-keyword">if</span> index == <span class="hljs-number">0</span>:
+                constellation.total_fortune_score = <span class="hljs-built_in">int</span>(score_pattern.search(li(<span class="hljs-string">&#x27;span em&#x27;</span>).attr(<span class="hljs-string">&#x27;style&#x27;</span>)).group(<span class="hljs-number">1</span>)) / <span class="hljs-number">16</span>
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">1</span>:
+                constellation.love_fortune_score = <span class="hljs-built_in">int</span>(score_pattern.search(li(<span class="hljs-string">&#x27;span em&#x27;</span>).attr(<span class="hljs-string">&#x27;style&#x27;</span>)).group(<span class="hljs-number">1</span>)) / <span class="hljs-number">16</span>
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">2</span>:
+                constellation.career_fortune_score = <span class="hljs-built_in">int</span>(
+                    score_pattern.search(li(<span class="hljs-string">&#x27;span em&#x27;</span>).attr(<span class="hljs-string">&#x27;style&#x27;</span>)).group(<span class="hljs-number">1</span>)) / <span class="hljs-number">16</span>
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">3</span>:
+                constellation.wealth_fortune_score = <span class="hljs-built_in">int</span>(
+                    score_pattern.search(li(<span class="hljs-string">&#x27;span em&#x27;</span>).attr(<span class="hljs-string">&#x27;style&#x27;</span>)).group(<span class="hljs-number">1</span>)) / <span class="hljs-number">16</span>
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">4</span>:
+                constellation.health_percent = li.text().split(<span class="hljs-string">&#x27;：&#x27;</span>)[-<span class="hljs-number">1</span>]
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">5</span>:
+                constellation.talk_percent = li.text().split(<span class="hljs-string">&#x27;：&#x27;</span>)[-<span class="hljs-number">1</span>]
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">6</span>:
+                constellation.lucky_color = li.text().split(<span class="hljs-string">&#x27;：&#x27;</span>)[-<span class="hljs-number">1</span>]
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">7</span>:
+                constellation.lucky_number = li.text().split(<span class="hljs-string">&#x27;：&#x27;</span>)[-<span class="hljs-number">1</span>]
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">8</span>:
+                constellation.match_constellation = li.text().split(<span class="hljs-string">&#x27;：&#x27;</span>)[-<span class="hljs-number">1</span>]
+            <span class="hljs-keyword">else</span>:
+                constellation.short_comment = li.text().split(<span class="hljs-string">&#x27;：&#x27;</span>)[-<span class="hljs-number">1</span>]
+        <span class="hljs-keyword">for</span> index, span <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(doc(<span class="hljs-string">&#x27;.c_cont p span&#x27;</span>).items()):
+            <span class="hljs-keyword">if</span> index == <span class="hljs-number">0</span>:
+                constellation.total_fortune = span.text()
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">1</span>:
+                constellation.love_fortune = span.text()
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">2</span>:
+                constellation.career_fortune = span.text()
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">3</span>:
+                constellation.wealth_fortune = span.text()
+            <span class="hljs-keyword">else</span>:
+                constellation.health = span.text()
+        <span class="hljs-keyword">return</span> constellation.to_list()
 
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">header_render</span>(<span class="hljs-params">self</span>):</span>
-        <span class="hljs-keyword">return</span> self.env.get_template(<span class="hljs-string">&#x27;article_header.html&#x27;</span>).render(author=<span class="hljs-string">&quot;CoderPig&quot;</span>)
 
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">footer_render</span>(<span class="hljs-params">self</span>):</span>
-        <span class="hljs-keyword">return</span> self.env.get_template(<span class="hljs-string">&#x27;article_footer.html&#x27;</span>).render()
+<span class="hljs-comment"># 写入csv</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">write_to_csv</span>(<span class="hljs-params">data_list, file_path</span>):</span>
+    <span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(file_path, <span class="hljs-string">&#x27;a+&#x27;</span>, newline=<span class="hljs-string">&#x27;&#x27;</span>) <span class="hljs-keyword">as</span> f:
+        writer = csv.writer(f)
+        <span class="hljs-keyword">for</span> row <span class="hljs-keyword">in</span> data_list:
+            writer.writerow(row)
 
-    <span class="hljs-comment">#  标题</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">heading</span>(<span class="hljs-params">self, text, level</span>):</span>
-        <span class="hljs-keyword">if</span> level == <span class="hljs-number">2</span>:
-            <span class="hljs-keyword">return</span> self.h2_template.render(text=text)
-        <span class="hljs-keyword">elif</span> level == <span class="hljs-number">3</span>:
-            <span class="hljs-keyword">return</span> self.h3_template.render(text=text)
-        <span class="hljs-keyword">elif</span> level == <span class="hljs-number">4</span>:
-            split_list = text.split(<span class="hljs-string">&quot;：&quot;</span>)
-            <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(split_list) &gt; <span class="hljs-number">0</span>:
-                <span class="hljs-keyword">return</span> self.h4_template.render(order=split_list[<span class="hljs-number">0</span>], text=split_list[<span class="hljs-number">1</span>])
-            <span class="hljs-keyword">return</span> self.h4_template.render(text=text)
-        <span class="hljs-keyword">else</span>:
-            <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;&lt;h{}&gt;{}&lt;/h{}&gt;&lt;br&gt;&quot;</span>.<span class="hljs-built_in">format</span>(level, text, level)
 
-    <span class="hljs-comment"># 粗体</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">strong</span>(<span class="hljs-params">self, text</span>):</span>
-        <span class="hljs-keyword">return</span> self.strong_template.render(text=text)
+<span class="hljs-comment"># 写入Excel</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">write_to_excel</span>(<span class="hljs-params">data_list, file_path</span>):</span>
+    workbook = xlwt.Workbook()
+    sheet = workbook.add_sheet(<span class="hljs-string">&#x27;每日运势&#x27;</span>, cell_overwrite_ok=<span class="hljs-literal">True</span>)
+    <span class="hljs-keyword">for</span> first_index, data <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(data_list):
+        <span class="hljs-keyword">for</span> second_index, value <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(data):
+            <span class="hljs-keyword">if</span> first_index == <span class="hljs-number">0</span>:
+                sheet.write(first_index, second_index, value)
+            <span class="hljs-keyword">else</span>:
+                sheet.write(first_index, second_index, value)
+    workbook.save(file_path)
 
-    <span class="hljs-comment"># 行内代码</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">codespan</span>(<span class="hljs-params">self, text</span>):</span>
-        <span class="hljs-comment"># 如果有**开头说明字体需加粗</span>
-        <span class="hljs-keyword">if</span> text.startswith(<span class="hljs-string">&quot;**&quot;</span>):
-            text = self.codespan_template.render(text=<span class="hljs-string">&#x27;&lt;strong&gt;{}&lt;/strong&gt;&#x27;</span>.<span class="hljs-built_in">format</span>(text[<span class="hljs-number">2</span>: -<span class="hljs-number">2</span>]))
-        <span class="hljs-keyword">return</span> self.codespan_template.render(text=text)
 
-    <span class="hljs-comment"># 引用</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">block_quote</span>(<span class="hljs-params">self, text</span>):</span>
-        is_ul = <span class="hljs-literal">False</span>  <span class="hljs-comment"># 是否为列表类型</span>
-        <span class="hljs-comment"># 判断是否为列表，是去掉换行</span>
-        <span class="hljs-keyword">if</span> text.startswith(<span class="hljs-string">&quot;&lt;br&gt;&quot;</span>):
-            is_ul = <span class="hljs-literal">True</span>
-            text = text.replace(<span class="hljs-string">&quot;&lt;br&gt;&quot;</span>, <span class="hljs-string">&quot;&quot;</span>)
-        <span class="hljs-comment">#  如果是&lt;section&gt;开头说明前面先被段落渲染过，提取文本</span>
-        <span class="hljs-keyword">if</span> text.startswith(<span class="hljs-string">&quot;&lt;section&gt;&quot;</span>):
-            section_selector = etree.HTML(text)
-            spans = section_selector.xpath(<span class="hljs-string">&quot;descendant::span&quot;</span>)
-            text_result = <span class="hljs-string">&#x27;&#x27;</span>
-            <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(spans) &gt; <span class="hljs-number">0</span>:
-                <span class="hljs-keyword">for</span> span <span class="hljs-keyword">in</span> spans:
-                    text_result += self.blockquote_template.render(text=span.text)
-            print(text_result[:-<span class="hljs-number">4</span>] <span class="hljs-keyword">if</span> text_result.endswith(<span class="hljs-string">&quot;&lt;br&gt;&quot;</span>) <span class="hljs-keyword">else</span> text_result)
-            <span class="hljs-keyword">return</span> text_result
-        render_result = self.blockquote_template.render(text=text)
-        <span class="hljs-keyword">if</span> is_ul:
-            render_result = render_result.replace(<span class="hljs-string">&#x27;&lt;span style=&quot;letter-spacing: 1px; margin-left: 0.5em&quot;&gt;&lt;ul&#x27;</span>, <span class="hljs-string">&quot;&lt;ul&quot;</span>)
-            render_result = render_result.replace(<span class="hljs-string">&#x27;&lt;/ul&gt;&lt;/span&gt;&#x27;</span>, <span class="hljs-string">&quot;&lt;/ul&gt;&quot;</span>)
-
-        <span class="hljs-keyword">return</span> render_result
-
-    <span class="hljs-comment"># 段落</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">paragraph</span>(<span class="hljs-params">self, text</span>):</span>
-        <span class="hljs-keyword">return</span> self.p_template.render(text=text)
-
-    <span class="hljs-comment"># 列表</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">list</span>(<span class="hljs-params">self, text, ordered, level, start=<span class="hljs-literal">None</span></span>):</span>
-        <span class="hljs-keyword">return</span> self.ul_template.render(text=text)
-
-    <span class="hljs-comment"># 列表项</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">list_item</span>(<span class="hljs-params">self, text, level</span>):</span>
-        <span class="hljs-keyword">return</span> self.li_template.render(text=text)
-
-    <span class="hljs-comment"># 表格处理</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">table</span>(<span class="hljs-params">self, text</span>):</span>
-        table_selector = etree.HTML(text.replace(<span class="hljs-string">&quot;&lt;code&gt;&quot;</span>, <span class="hljs-string">&quot;&quot;</span>).replace(<span class="hljs-string">&quot;&lt;/code&gt;&quot;</span>, <span class="hljs-string">&quot;&quot;</span>))
-        table_headers = table_selector.xpath(<span class="hljs-string">&#x27;//tr/th&#x27;</span>)
-        table_details = table_selector.xpath(<span class="hljs-string">&#x27;//tr/td&#x27;</span>)
-        cell_header_list = []
-        <span class="hljs-keyword">for</span> index, values <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(table_headers):
-            style = values.attrib.get(<span class="hljs-string">&#x27;style&#x27;</span>)
-            text = values.text
-            cell_header_list.append(
-                Cell(text.replace(<span class="hljs-string">&quot; &quot;</span>, <span class="hljs-string">&quot;&quot;</span>) <span class="hljs-keyword">if</span> text <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span> <span class="hljs-keyword">else</span> <span class="hljs-literal">None</span>,
-                     <span class="hljs-literal">None</span> <span class="hljs-keyword">if</span> style <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span> <span class="hljs-keyword">else</span> style[<span class="hljs-number">11</span>:],
-                     <span class="hljs-literal">True</span> <span class="hljs-keyword">if</span> (index % <span class="hljs-number">2</span> == <span class="hljs-number">0</span>) <span class="hljs-keyword">else</span> <span class="hljs-literal">False</span>))
-        cell_detail_list = []
-        <span class="hljs-keyword">for</span> index, values <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(table_details):
-            style = values.attrib.get(<span class="hljs-string">&#x27;style&#x27;</span>)
-            text = values.text
-            cell_detail_list.append(
-                Cell(text.replace(<span class="hljs-string">&quot; &quot;</span>, <span class="hljs-string">&quot;&quot;</span>) <span class="hljs-keyword">if</span> text <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span> <span class="hljs-keyword">else</span> <span class="hljs-literal">None</span>,
-                     <span class="hljs-literal">None</span> <span class="hljs-keyword">if</span> style <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span> <span class="hljs-keyword">else</span> style[<span class="hljs-number">11</span>:],
-                     <span class="hljs-literal">True</span> <span class="hljs-keyword">if</span> (index % <span class="hljs-number">2</span> == <span class="hljs-number">0</span>) <span class="hljs-keyword">else</span> <span class="hljs-literal">False</span>))
-        <span class="hljs-keyword">return</span> self.table_template.render(header_list=cell_header_list, detail_list=cell_detail_list)
-
-    <span class="hljs-comment"># 代码块</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">block_code</span>(<span class="hljs-params">self, code, info=<span class="hljs-literal">None</span></span>):</span>
-        lexer = get_lexer_by_name(info <span class="hljs-keyword">if</span> info <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span> <span class="hljs-keyword">else</span> <span class="hljs-string">&#x27;Python&#x27;</span>, stripall=<span class="hljs-literal">True</span>)
-        formatter = html.HtmlFormatter(noclasses=<span class="hljs-literal">True</span>, style=<span class="hljs-string">&#x27;perldoc&#x27;</span>, wrapcode=<span class="hljs-literal">True</span>)
-        highlight_html = highlight(code, lexer, formatter).replace(<span class="hljs-string">&#x27;div&#x27;</span>, <span class="hljs-string">&#x27;section&#x27;</span>)
-        <span class="hljs-comment"># 行尾塞换行符，行首塞&amp;nbsp;</span>
-        highlight_html_result = <span class="hljs-string">&#x27;&#x27;</span>
-        lines = highlight_html.split(<span class="hljs-string">&quot;\n&quot;</span>)
-        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(lines) &gt; <span class="hljs-number">0</span>:
-            <span class="hljs-keyword">for</span> index, line <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(lines):
-                <span class="hljs-keyword">if</span> line == <span class="hljs-string">&#x27;&#x27;</span> <span class="hljs-keyword">and</span> index == <span class="hljs-built_in">len</span>(lines) - <span class="hljs-number">1</span>:
-                    <span class="hljs-keyword">break</span>
-                <span class="hljs-keyword">else</span>:
-                    <span class="hljs-comment"># 获取左侧空格数量</span>
-                    left_blank_count = <span class="hljs-number">0</span>
-                    <span class="hljs-keyword">for</span> c <span class="hljs-keyword">in</span> line:
-                        <span class="hljs-keyword">if</span> c == <span class="hljs-string">&#x27; &#x27;</span>:
-                            left_blank_count += <span class="hljs-number">1</span>
-                        <span class="hljs-keyword">else</span>:
-                            <span class="hljs-keyword">break</span>
-                highlight_html_result += <span class="hljs-string">&#x27;{}{}&lt;br&gt;&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-string">&#x27;&amp;nbsp;&#x27;</span> * left_blank_count, line.lstrip())
-        highlight_selector = etree.HTML(highlight_html_result)
-        <span class="hljs-comment"># 创建一个包裹code节点下所有元素的节点，同时设置字体大小</span>
-        span_node = etree.Element(<span class="hljs-string">&#x27;span&#x27;</span>, {<span class="hljs-string">&#x27;style&#x27;</span>: <span class="hljs-string">&#x27;font-size: 12px;&#x27;</span>})
-        <span class="hljs-comment"># 遍历code里所有的节点，添加到外层span中，清空code子节点，添加这个span结点</span>
-        code_node = highlight_selector.xpath(<span class="hljs-string">&quot;//code&quot;</span>)
-        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(code_node) &gt; <span class="hljs-number">0</span>:
-            node_list = code_node[<span class="hljs-number">0</span>].xpath(<span class="hljs-string">&#x27;child::*&#x27;</span>)
-            <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> node_list:
-                style = node.attrib.get(<span class="hljs-string">&#x27;style&#x27;</span>)
-                <span class="hljs-keyword">if</span> style <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:
-                    node.attrib[<span class="hljs-string">&#x27;style&#x27;</span>] = <span class="hljs-string">&#x27;font-size: 12px; &#x27;</span> + style
-                    <span class="hljs-keyword">if</span> node.text.endswith(<span class="hljs-string">&#x27;\n&#x27;</span>):
-                        print(<span class="hljs-string">&quot;换行&quot;</span>)
-                span_node.append(node)
-            <span class="hljs-comment"># 清空code节点</span>
-            code_text = code_node[<span class="hljs-number">0</span>].text
-            code_node[<span class="hljs-number">0</span>].clear()
-            <span class="hljs-comment"># code节点设置水平滚动条、边距等</span>
-            code_node[<span class="hljs-number">0</span>].attrib[<span class="hljs-string">&#x27;style&#x27;</span>] = <span class="hljs-string">&#x27;display: block; padding: 5.95px; overflow-x: auto; white-space:nowrap;&#x27;</span>
-            span_node.text = code_text
-            code_node[<span class="hljs-number">0</span>].append(span_node)
-        <span class="hljs-comment"># etree生成的html会带上&lt;html&gt;&lt;body&gt;标签，利用游标范围过滤，同时替换div标签为section</span>
-        <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&lt;br&gt;&#x27;</span> + etree.tostring(highlight_selector).decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>)[<span class="hljs-number">12</span>: -<span class="hljs-number">14</span>].replace(<span class="hljs-string">&quot;div&quot;</span>, <span class="hljs-string">&quot;section&quot;</span>)
-
-    <span class="hljs-comment"># 超链接</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">link</span>(<span class="hljs-params">self, link, text=<span class="hljs-literal">None</span>, title=<span class="hljs-literal">None</span></span>):</span>
-        <span class="hljs-keyword">return</span> self.link_template.render(text=text, link=link)
-
-    <span class="hljs-comment"># 图片</span>
-    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">image</span>(<span class="hljs-params">self, src, alt=<span class="hljs-string">&quot;&quot;</span>, title=<span class="hljs-literal">None</span></span>):</span>
-        <span class="hljs-keyword">return</span> self.image_template.render(src=src)
-
+<span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:
+    <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    constellation_list = [name_list]
+    <span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> kind_list:
+        constellation_list.append(extract_constellation_info(k))
+    write_to_csv(constellation_list, csv_file_path)
+    write_to_excel(constellation_list, excel_file_path)
+    print(<span class="hljs-string">&quot;数据写入完毕，请打开文件查看~&quot;</span>)

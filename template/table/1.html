@@ -1,26 +1,27 @@
 <table>
-    <tbody>
+    <tbody>{%- set width= (577 - 20 * row_count) / row_count -%}
     <tr>
-        <td width="150" valign="top" style="word-break: break-all;" align="{{ header_list[0].align }}">
-            <span style="font-size: 15px;"><strong>{{ header_list[0].text }}<br></strong></span>
+        {%- for header in header_list -%}
+        <td width="{{ width }}" valign="top" style="word-break: break-all;" align="{{ header.align }}">
+            <span style="font-size: 15px;">{{ header.text }}</span>
         </td>
-        <td width="385" valign="top" style="word-break: break-all;" align="{{ header_list[1].align }}">
-            <span style="font-size: 15px;"><strong>{{ header_list[1].text }}</strong></span>
-        </td>
+        {%- endfor -%}
     </tr>
     {%- for detail in detail_list -%}
-    {%- if detail.is_left == True -%}
+    {%- if loop.index %row_count == 1 -%}
     <tr>
-        <td width="150" valign="top" style="word-break: break-all;" align="{{ detail.align }}">
-            <span style="color: rgb(255, 64, 129);">
-                <strong><span style="font-size: 14px;">{{ detail.text }}</span></strong>
-            </span>
+        <td width="{{ width }}" valign="top" style="word-break: break-all;" align="{{ detail.align }}">
+                <span style="font-size: 14px;">{{ detail.text }}</span>
         </td>
-        {%- else -%}
-        <td width="385" valign="top" style="word-break: break-all;" align="{{ detail.align }}">
+        {%- elif loop.index %row_count == 0 -%}
+        <td width="{{ width }}" valign="top" style="word-break: break-all;" align="{{ detail.align }}">
             <span style="font-size: 14px;">{{ detail.text }}</span>
         </td>
     </tr>
+    {%- else -%}
+    <td width="{{ width }}" valign="top" style="word-break: break-all;" align="{{ detail.align }}">
+        <span style="font-size: 14px;">{{ detail.text }}</span>
+    </td>
     {%- endif -%}
     {%- endfor -%}
     </tbody>

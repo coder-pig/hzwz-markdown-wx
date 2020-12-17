@@ -20,13 +20,9 @@ from lxml import etree
 
 # 表格单元格
 class Cell:
-    text = None
-    align = None
-
-    def __init__(self, text, align, index):
+    def __init__(self, text, align):
         self.text = text
         self.align = align
-        self.index = index
 
 
 class StyleRenderer(mistune.HTMLRenderer):
@@ -77,6 +73,12 @@ class StyleRenderer(mistune.HTMLRenderer):
                     '/codespan/{}.html'.format(value)) if value != 'None' else None
             elif key == 'codestyle':
                 self.codestyle = value if value != 'None' else 'xcode'
+            elif key == 'header':
+                self.header_template = self.env.get_template(
+                    '/header/{}.html'.format(value)) if value != 'None' else None
+            elif key == 'footer':
+                self.footer_template = self.env.get_template(
+                    '/footer/{}.html'.format(value)) if value != 'None' else None
 
     # 分级标题
     def heading(self, text, level):
@@ -144,7 +146,7 @@ class StyleRenderer(mistune.HTMLRenderer):
     # 链接
     def link(self, link, text=None, title=None):
         if self.link_template is not None:
-            return self.link_template.render(text=text)
+            return self.link_template.render(link=link, text=text)
         else:
             if text is None:
                 text = link
@@ -164,7 +166,6 @@ class StyleRenderer(mistune.HTMLRenderer):
     def block_code(self, code, info=None):
         if self.mac_window_template is not None:
             highlight_result = renderer_by_node(code, self.codestyle, info)
-            print(highlight_result)
             return self.mac_window_template.render(text=highlight_result)
         else:
             result = '<pre><code'
@@ -178,15 +179,37 @@ class StyleRenderer(mistune.HTMLRenderer):
 
     # 表格
     def table(self, text):
-        table_selector = etree.HTML(text)
-        table_headers = table_selector.xpath('//tr/th')
-        table_details = table_selector.xpath('//tr/td')
-        header_cell_list = []
-        for index, value in enumerate(table_headers):
-            style = value.attrib.get('style')
-            text = value.text
-            header_cell_list.append(Cell(text, style, index))
-        return self.table_template.render(row_count=len(table_headers), header_list=header_cell_list)
+        if self.table_template is not None:
+            table_selector = etree.HTML(text)
+            ths = table_selector.xpath('//tr/th')
+            tds = table_selector.xpath('//tr/td')
+            th_cell_list = []
+            for index, value in enumerate(ths):
+                style = value.attrib.get('style')[11:]
+                text = value.text
+                th_cell_list.append(Cell(text, style))
+            td_cell_list = []
+            for index, value in enumerate(tds):
+                style = value.attrib.get('style')[11:]
+                text = value.text
+                td_cell_list.append(Cell(text, style))
+            return self.table_template.render(row_count=len(ths), header_list=th_cell_list, detail_list=td_cell_list)
+        else:
+            return text
+
+    # 头部
+    def header(self):
+        if self.header_template is not None:
+            return self.header_template.render()
+        else:
+            return ''
+
+    # 尾部
+    def footer(self):
+        if self.footer_template is not None:
+            return self.footer_template.render()
+        else:
+            return ''
 
 
 def escape(s, quote=True):
@@ -205,5 +228,6 @@ def escape_html(s):
 
 
 def render_article(content, style_ini_path):
-    print(mistune.create_markdown(renderer=StyleRenderer(os.path.join(os.getcwd(), style_ini_path)),
-                                  plugins=[plugin_table])(content))
+    render = StyleRenderer(os.path.join(os.getcwd(), style_ini_path))
+    content_result = mistune.create_markdown(renderer=render, plugins=[plugin_table])(content)
+    return '{}{}{}'.format(render.header(), content_result, render.footer())

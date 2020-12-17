@@ -19,7 +19,7 @@ from pygments.lexers import get_lexer_by_name
 
 
 # 表格单元格
-class Cell:
+class TestCell:
     text = None
     align = None
     is_head = False
@@ -96,7 +96,6 @@ class CpPythonSpiderRenderer(mistune.HTMLRenderer):
             if len(spans) > 0:
                 for span in spans:
                     text_result += self.blockquote_template.render(text=span.text)
-            print(text_result[:-4] if text_result.endswith("<br>") else text_result)
             return text_result
         render_result = self.blockquote_template.render(text=text)
         if is_ul:
@@ -127,7 +126,7 @@ class CpPythonSpiderRenderer(mistune.HTMLRenderer):
             style = values.attrib.get('style')
             text = values.text
             cell_header_list.append(
-                Cell(text.replace(" ", "") if text is not None else None,
+                TestCell(text.replace(" ", "") if text is not None else None,
                      None if style is None else style[11:],
                      True if (index % 2 == 0) else False))
         cell_detail_list = []
@@ -135,7 +134,7 @@ class CpPythonSpiderRenderer(mistune.HTMLRenderer):
             style = values.attrib.get('style')
             text = values.text
             cell_detail_list.append(
-                Cell(text.replace(" ", "") if text is not None else None,
+                TestCell(text.replace(" ", "") if text is not None else None,
                      None if style is None else style[11:],
                      True if (index % 2 == 0) else False))
         return self.table_template.render(header_list=cell_header_list, detail_list=cell_detail_list)

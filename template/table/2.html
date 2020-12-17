@@ -7,6 +7,25 @@
         </td>
         {%- endfor -%}
     </tr>
+    {%- for detail in detail_list -%}
+    {%- if loop.index %row_count == 1 -%}
+    <tr>
+        <td width="{{ width }}" valign="top" style="word-break: break-all;" align="{{ detail.align }}">
+            <span style="color: rgb(255, 64, 129);">
+                <strong><span style="font-size: 14px;">{{ detail.text }}</span></strong>
+            </span>
+        </td>
+        {%- elif loop.index %row_count == 0 -%}
+        <td width="{{ width }}" valign="top" style="word-break: break-all;" align="{{ detail.align }}">
+            <span style="font-size: 14px;">{{ detail.text }}</span>
+        </td>
+    </tr>
+    {%- else -%}
+    <td width="{{ width }}" valign="top" style="word-break: break-all;" align="{{ detail.align }}">
+        <span style="font-size: 14px;">{{ detail.text }}</span>
+    </td>
+    {%- endif -%}
+    {%- endfor -%}
     </tbody>
 </table>
 
