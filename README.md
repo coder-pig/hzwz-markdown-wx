@@ -7,7 +7,7 @@
 <img src="res/project_icon.jpg">
 </p>
 
-<p align="center" style="margin: 30px 0 35px;">🐭尾汁Markdown转换工具</p>
+<p align="center" style="margin: 30px 0 35px;">🐭 尾汁Markdown转换工具</p>
 
 **`hzwz-markdown`** 是一款基于**Python**实现的，用于 `将Markdown文件转换成带样式的微信公众号文章HTML` 的工具。<br>
 
@@ -24,7 +24,7 @@
 而在使用这些工具时，慢慢发现了两个问题：<br>
 
 - ① **样式单一**：烂大街，有些支持定制，但要自己写CSS，不会前端谁顶得住啊；
-- ② **夹带私货**：要登录，要关注，要跳转，恶心心，我只是想转下文件，TM...；
+- ② **夹带私货**：要登录，要关注，要跳转，恶心心，我只是想转下文件，我TM...；
 
 遂有了自己写一个工具的想法，我的愿景：
 
@@ -32,7 +32,7 @@
 - ② **简单易用**：用户通过尽可能简单的配置，一键完成转换，一劳永逸。
 - ③ **纯粹&可定制**：代码开源，没有私货，纯透明，会Python还能自行定制。
 
-## 使用前的准备工作
+## 0x1、使用前的准备工作
 
 - **Step 1**：通过Git把代码clone到本地，或是直接Download代码压缩包；
 - **Step 2**：**安装Python**，如何安装请自行百度，安装了的直接跳过；
@@ -43,7 +43,7 @@
 pip install -r requirements.txt
 ```
 
-## 怎么直接用？
+## 0x2、怎么直接用？
 
 ### 1、准备下样式配置文件
 
@@ -99,11 +99,66 @@ pip install -r requirements.txt
 
 ### 3、复制到微信公众号
 
-接着打开微信公众号，新建文章
+接着打开微信公众号，新建文章，F12打开开发者工具，定位到空白内容，如下图：
 
-```
+![][17]
 
-```
+右键Edit as HTML，把生成的带样式的HTML代码拷进去，然后点下外部空白区域即可：
+
+![][18]
+
+看着有点乱？错位，没关系，点击下保存或者预览，即可恢复正常
+
+![][19]
+
+还不正常也没关系，预览发送到手机查阅效果：
+
+![][20]
+
+可以，效果很不错，还有自定义头尾样式，看起来步骤很多，其实非常简单，真一步到位。
+
+这就是这个脚本的用法，如果你想订制自己的样式的话，可以继续往下看~
+
+
+----------
+
+##0x3、自定义自己的样式
+
+### 1、模板的获取
+
+以某公号的样式为例：
+
+![][21]
+
+这个黑框背景图片和二级标题不错，网页文章页，F12定位到对应结点，
+
+![][22]
+
+右键**Copy** → **Copy element**，粘贴到工程的 **wash/before/in.html**，执行下清洗脚本：
+
+![][23]
+
+![][24]
+
+![][25]
+
+将out.html文件放到**template/image**目录下，改名为2.html，接着改下样式文件，image=2
+
+![][26]
+
+运行后把生成的带样式的HTML复制到微信，点击保存后看下效果：
+
+![][27]
+
+黑边到手，剩下的二级标题也是如法炮制：
+
+![][28]
+
+看下效果：
+
+![][29]
+
+基本内容就这些，还有些细节后续补上~
 
 
   [1]: http://blog.didispace.com/tools/online-markdown/
@@ -122,3 +177,16 @@ pip install -r requirements.txt
   [14]: http://static.zybuluo.com/coder-pig/zkkdh9g1ezd68fw94ar6i7bo/image_1epo1p8kkuu61j12959bm713co58.png
   [15]: http://static.zybuluo.com/coder-pig/gc535pabtdh1mv0xgdrx2c0l/image_1epo1qe7a1qok1haoon91cmm1fcn5l.png
   [16]: http://static.zybuluo.com/coder-pig/zh1i59p2ymf1gnadw0f1o1uw/image_1epo1thdocob1t021eak1n9o1lrp62.png
+  [17]: http://static.zybuluo.com/coder-pig/bydfuqlctg625uc2v0suufvt/image_1epog5bbsis21ukqeucsbh6p9.png
+  [18]: http://static.zybuluo.com/coder-pig/nwqe7s9d0odol3868ddchk2h/image_1epog9bol7vqqb6dkvldv88pm.png
+  [19]: http://static.zybuluo.com/coder-pig/w2znizkydrmyyx1ncmvshnzj/image_1epoge0f810ak3hf5e71ib8hoq9.png
+  [20]: http://static.zybuluo.com/coder-pig/rozyqsejuiecv7h2l7679ewi/1.gif
+  [21]: http://static.zybuluo.com/coder-pig/59i8vdcupg066u2327oy10ou/image_1epohjnmt6h1nc3jf8ra127q1k.png
+  [22]: http://static.zybuluo.com/coder-pig/grd7ptuk2qx87sanuzxdptpk/image_1epohmvp9ndus26uuu3271kkl21.png
+  [23]: http://static.zybuluo.com/coder-pig/ezoqe9s11sbzvxvnp8mcg017/image_1epohr422s2m1mg217hg16o71u7k2e.png
+  [24]: http://static.zybuluo.com/coder-pig/9qpejohxemedm9mq7qh1ef8i/image_1epoi35qt15ik1sub1co32s10672r.png
+  [25]: http://static.zybuluo.com/coder-pig/bob6wxtk77vrgodz6ds96a8o/image_1epoi4vk61nrherv120a11oo1gds38.png
+  [26]: http://static.zybuluo.com/coder-pig/v267ukouivlceps5xavqoboy/image_1epoi9lef1ie0f0q9ld1v6u1b3l3l.png
+  [27]: http://static.zybuluo.com/coder-pig/06ky5hoc5x8i2scnb5l0v6xj/image_1epoibbop14jelkk1kv01a3vmms42.png
+  [28]: http://static.zybuluo.com/coder-pig/njgzv3n7nulrs23rdtsrdm8s/image_1epoiobu113io1bealj2o2p6jg4s.png
+  [29]: http://static.zybuluo.com/coder-pig/3iist6zhwuyyaj4ijgw2srka/image_1epoiqc341t3sma07631hinkdp59.png

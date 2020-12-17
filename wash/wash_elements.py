@@ -8,7 +8,6 @@
    Desc     : 节点清洗
 -------------------------------------------------
 """
-import os
 import re
 
 from lxml import etree, html
@@ -28,6 +27,7 @@ def write_file(content, file_path):
 
 # 过滤无用属性值
 pattern_str_list = [
+    r'data-ratio=".*?"',
     r'data-tool=".*?"',
     r'data-tools=".*?"',
     r'data-website=".*?"',
@@ -38,6 +38,7 @@ pattern_str_list = [
     r'data-mpa-template=".*?"',
     r'mpa-from-tpl=".*?"',
     r'data-mpa-powered-by=".*?"',
+    r'powered-by=".*?"',
     r'data-cropselx\d=".*?"',
     r'data-cropsely\d=".*?"',
     r'data-md5=".*?"',
