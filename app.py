@@ -9,18 +9,22 @@
 -------------------------------------------------
 """
 import os.path
+
+import config_getter
 import cp_utils
 from styles_renderer import render_article
 
-md_dir = os.path.join(os.getcwd(), 'article/md')  # 待转换md文件路径
-out_dir = os.path.join(os.getcwd(), 'article/out')  # 输出html文件路径
-styles_dir = os.path.join(os.getcwd(), 'styles/custom')  # 文章样式配置文件路径
+md_dir = os.path.join(os.getcwd(), config_getter.get_config("config", "md_dir"))  # 待转换md文件路径
+out_dir = os.path.join(os.getcwd(), config_getter.get_config("config", "out_dir"))  # 输出html文件路径
+styles_dir = os.path.join(os.getcwd(), config_getter.get_config("config", "styles_dir"))  # 文章样式配置文件路径
+template_dir = os.path.join(os.getcwd(), config_getter.get_config("config", "template_dir"))  # 样式模板路径
 
 if __name__ == '__main__':
     # 相关文件夹初始化
     cp_utils.is_dir_existed(md_dir)
     cp_utils.is_dir_existed(out_dir)
     cp_utils.is_dir_existed(styles_dir)
+    cp_utils.is_dir_existed(template_dir)
     # 文件检查/
     md_file_path_list = cp_utils.filter_file_type(md_dir, '.md')
     if len(md_file_path_list) == 0:
@@ -39,7 +43,7 @@ if __name__ == '__main__':
             for theme_file_path in theme_file_path_list:
                 theme_name = theme_file_path.split(os.sep)[-1][:-4]
                 print("应用样式 →", theme_name)
-                renderer_content = render_article(file_content, theme_file_path)
+                renderer_content = render_article(file_content, theme_file_path, template_dir)
                 out_file_path = os.path.join(out_dir, file_name.replace(".md", "_{}.html".format(theme_name)))
                 print("输出文件 →", out_file_path)
                 cp_utils.write_file(renderer_content, out_file_path)

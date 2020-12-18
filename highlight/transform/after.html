@@ -1,1 +1,141 @@
-<span class="hljs-attribute">pip</span> install -r requirements.txt
+<span class="hljs-comment"># -*- coding: utf-8 -*-</span>
+<span class="hljs-comment"># !/usr/bin/env python</span>
+<span class="hljs-string">&quot;&quot;&quot;
+-------------------------------------------------
+   File     : xzw_spider.py
+   Author   : CoderPig
+   date     : 2020-12-11 20:05
+   Desc     : 爬取星座屋每日运势保存到csv和Excel中
+-------------------------------------------------
+&quot;&quot;&quot;</span>
+<span class="hljs-keyword">import</span> xlwt
+<span class="hljs-keyword">import</span> xlrd
+<span class="hljs-keyword">import</span> csv
+<span class="hljs-keyword">import</span> requests <span class="hljs-keyword">as</span> r
+<span class="hljs-keyword">from</span> pyquery <span class="hljs-keyword">import</span> PyQuery <span class="hljs-keyword">as</span> pq
+<span class="hljs-keyword">import</span> re
+<span class="hljs-keyword">import</span> os
+
+base_url = <span class="hljs-string">&#x27;https://www.xzw.com/fortune/{}/&#x27;</span>
+<span class="hljs-comment"># 星座后缀列表</span>
+kind_list = [<span class="hljs-string">&#x27;aries&#x27;</span>, <span class="hljs-string">&#x27;taurus&#x27;</span>, <span class="hljs-string">&#x27;gemini&#x27;</span>, <span class="hljs-string">&#x27;cancer&#x27;</span>, <span class="hljs-string">&#x27;leo&#x27;</span>, <span class="hljs-string">&#x27;virgo&#x27;</span>,
+             <span class="hljs-string">&#x27;libra&#x27;</span>, <span class="hljs-string">&#x27;scorpio&#x27;</span>, <span class="hljs-string">&#x27;sagittarius&#x27;</span>, <span class="hljs-string">&#x27;capricorn&#x27;</span>, <span class="hljs-string">&#x27;aquarius&#x27;</span>, <span class="hljs-string">&#x27;pisces&#x27;</span>]
+headers = {
+    <span class="hljs-string">&#x27;User-Agent&#x27;</span>: <span class="hljs-string">&#x27;Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) &#x27;</span>
+                  <span class="hljs-string">&#x27;Chrome/83.0.4103.97 Safari/537.36 &#x27;</span>
+}
+<span class="hljs-comment"># 表头</span>
+name_list = [<span class="hljs-string">&#x27;星座&#x27;</span>, <span class="hljs-string">&#x27;综合运势评分&#x27;</span>, <span class="hljs-string">&#x27;爱情运势评分&#x27;</span>, <span class="hljs-string">&#x27;事业学业评分&#x27;</span>, <span class="hljs-string">&#x27;财富运势评分&#x27;</span>, <span class="hljs-string">&#x27;健康指数&#x27;</span>, <span class="hljs-string">&#x27;商谈指数&#x27;</span>, <span class="hljs-string">&#x27;幸运颜色&#x27;</span>, <span class="hljs-string">&#x27;幸运数字&#x27;</span>,
+             <span class="hljs-string">&#x27;速配星座&#x27;</span>, <span class="hljs-string">&#x27;短评&#x27;</span>, <span class="hljs-string">&#x27;综合运势&#x27;</span>, <span class="hljs-string">&#x27;爱情运势&#x27;</span>, <span class="hljs-string">&#x27;事业学业&#x27;</span>, <span class="hljs-string">&#x27;财富运势&#x27;</span>, <span class="hljs-string">&#x27;健康运势&#x27;</span>]
+
+output_dir = os.path.join(os.getcwd(), <span class="hljs-string">&#x27;out&#x27;</span>)
+csv_file_path = os.path.join(os.path.join(output_dir, <span class="hljs-string">&#x27;constellation.csv&#x27;</span>))
+excel_file_path = os.path.join(os.path.join(output_dir, <span class="hljs-string">&#x27;constellation.xlsx&#x27;</span>))
+
+score_pattern = re.<span class="hljs-built_in">compile</span>(<span class="hljs-string">r&#x27;width:(\d+)px;&#x27;</span>)
+
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Constellation</span>:</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span>(<span class="hljs-params">self, constellation=<span class="hljs-literal">None</span>, total_fortune_score=<span class="hljs-literal">None</span>, love_fortune_score=<span class="hljs-literal">None</span>, career_fortune_score=<span class="hljs-literal">None</span>,
+                 wealth_fortune_score=<span class="hljs-literal">None</span>, health_percent=<span class="hljs-literal">None</span>, talk_percent=<span class="hljs-literal">None</span>, lucky_color=<span class="hljs-literal">None</span>, lucky_number=<span class="hljs-literal">None</span>,
+                 match_constellation=<span class="hljs-literal">None</span>, short_comment=<span class="hljs-literal">None</span>, total_fortune=<span class="hljs-literal">None</span>, love_fortune=<span class="hljs-literal">None</span>,
+                 career_fortune=<span class="hljs-literal">None</span>, wealth_fortune=<span class="hljs-literal">None</span>, health=<span class="hljs-literal">None</span></span>):</span>
+        self.constellation = constellation  <span class="hljs-comment"># 星座名</span>
+        self.total_fortune_score = total_fortune_score  <span class="hljs-comment"># 综合运势评分</span>
+        self.love_fortune_score = love_fortune_score  <span class="hljs-comment"># 爱情运势评分</span>
+        self.career_fortune_score = career_fortune_score  <span class="hljs-comment"># 事业学业评分</span>
+        self.wealth_fortune_score = wealth_fortune_score  <span class="hljs-comment"># 财富运势评分</span>
+        self.health_percent = health_percent  <span class="hljs-comment"># 健康指数</span>
+        self.talk_percent = talk_percent  <span class="hljs-comment"># 商谈指数</span>
+        self.lucky_color = lucky_color  <span class="hljs-comment"># 幸运颜色</span>
+        self.lucky_number = lucky_number  <span class="hljs-comment"># 幸运数字</span>
+        self.match_constellation = match_constellation  <span class="hljs-comment"># 速配星座</span>
+        self.short_comment = short_comment  <span class="hljs-comment"># 短评</span>
+        self.total_fortune = total_fortune  <span class="hljs-comment"># 综合运势</span>
+        self.love_fortune = love_fortune  <span class="hljs-comment"># 爱情运势</span>
+        self.career_fortune = career_fortune  <span class="hljs-comment"># 事业学业</span>
+        self.wealth_fortune = wealth_fortune  <span class="hljs-comment"># 财富运势</span>
+        self.health = health  <span class="hljs-comment"># 健康运势</span>
+
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">to_list</span>(<span class="hljs-params">self</span>):</span>
+        <span class="hljs-keyword">return</span> [self.constellation, self.total_fortune_score, self.love_fortune_score, self.career_fortune_score,
+                self.wealth_fortune_score,
+                self.health_percent, self.talk_percent, self.lucky_color, self.lucky_number, self.match_constellation,
+                self.short_comment, self.total_fortune, self.love_fortune, self.career_fortune, self.wealth_fortune,
+                self.health]
+
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">extract_constellation_info</span>(<span class="hljs-params">kind</span>):</span>
+    resp = r.get(base_url.<span class="hljs-built_in">format</span>(kind), headers=headers)
+    print(<span class="hljs-string">&quot;爬取：&quot;</span>, resp.url)
+    <span class="hljs-keyword">if</span> resp <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:
+        doc = pq(resp.text)
+        constellation = Constellation()
+        constellation.constellation = doc(<span class="hljs-string">&#x27;title&#x27;</span>).text()[<span class="hljs-number">0</span>:<span class="hljs-number">3</span>]
+        <span class="hljs-keyword">for</span> index, li <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(doc(<span class="hljs-string">&#x27;dl li&#x27;</span>).items()):
+            <span class="hljs-keyword">if</span> index == <span class="hljs-number">0</span>:
+                constellation.total_fortune_score = <span class="hljs-built_in">int</span>(score_pattern.search(li(<span class="hljs-string">&#x27;span em&#x27;</span>).attr(<span class="hljs-string">&#x27;style&#x27;</span>)).group(<span class="hljs-number">1</span>)) / <span class="hljs-number">16</span>
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">1</span>:
+                constellation.love_fortune_score = <span class="hljs-built_in">int</span>(score_pattern.search(li(<span class="hljs-string">&#x27;span em&#x27;</span>).attr(<span class="hljs-string">&#x27;style&#x27;</span>)).group(<span class="hljs-number">1</span>)) / <span class="hljs-number">16</span>
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">2</span>:
+                constellation.career_fortune_score = <span class="hljs-built_in">int</span>(
+                    score_pattern.search(li(<span class="hljs-string">&#x27;span em&#x27;</span>).attr(<span class="hljs-string">&#x27;style&#x27;</span>)).group(<span class="hljs-number">1</span>)) / <span class="hljs-number">16</span>
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">3</span>:
+                constellation.wealth_fortune_score = <span class="hljs-built_in">int</span>(
+                    score_pattern.search(li(<span class="hljs-string">&#x27;span em&#x27;</span>).attr(<span class="hljs-string">&#x27;style&#x27;</span>)).group(<span class="hljs-number">1</span>)) / <span class="hljs-number">16</span>
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">4</span>:
+                constellation.health_percent = li.text().split(<span class="hljs-string">&#x27;：&#x27;</span>)[-<span class="hljs-number">1</span>]
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">5</span>:
+                constellation.talk_percent = li.text().split(<span class="hljs-string">&#x27;：&#x27;</span>)[-<span class="hljs-number">1</span>]
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">6</span>:
+                constellation.lucky_color = li.text().split(<span class="hljs-string">&#x27;：&#x27;</span>)[-<span class="hljs-number">1</span>]
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">7</span>:
+                constellation.lucky_number = li.text().split(<span class="hljs-string">&#x27;：&#x27;</span>)[-<span class="hljs-number">1</span>]
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">8</span>:
+                constellation.match_constellation = li.text().split(<span class="hljs-string">&#x27;：&#x27;</span>)[-<span class="hljs-number">1</span>]
+            <span class="hljs-keyword">else</span>:
+                constellation.short_comment = li.text().split(<span class="hljs-string">&#x27;：&#x27;</span>)[-<span class="hljs-number">1</span>]
+        <span class="hljs-keyword">for</span> index, span <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(doc(<span class="hljs-string">&#x27;.c_cont p span&#x27;</span>).items()):
+            <span class="hljs-keyword">if</span> index == <span class="hljs-number">0</span>:
+                constellation.total_fortune = span.text()
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">1</span>:
+                constellation.love_fortune = span.text()
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">2</span>:
+                constellation.career_fortune = span.text()
+            <span class="hljs-keyword">elif</span> index == <span class="hljs-number">3</span>:
+                constellation.wealth_fortune = span.text()
+            <span class="hljs-keyword">else</span>:
+                constellation.health = span.text()
+        <span class="hljs-keyword">return</span> constellation.to_list()
+
+
+<span class="hljs-comment"># 写入csv</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">write_to_csv</span>(<span class="hljs-params">data_list, file_path</span>):</span>
+    <span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(file_path, <span class="hljs-string">&#x27;a+&#x27;</span>, newline=<span class="hljs-string">&#x27;&#x27;</span>) <span class="hljs-keyword">as</span> f:
+        writer = csv.writer(f)
+        <span class="hljs-keyword">for</span> row <span class="hljs-keyword">in</span> data_list:
+            writer.writerow(row)
+
+
+<span class="hljs-comment"># 写入Excel</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">write_to_excel</span>(<span class="hljs-params">data_list, file_path</span>):</span>
+    workbook = xlwt.Workbook()
+    sheet = workbook.add_sheet(<span class="hljs-string">&#x27;每日运势&#x27;</span>, cell_overwrite_ok=<span class="hljs-literal">True</span>)
+    <span class="hljs-keyword">for</span> first_index, data <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(data_list):
+        <span class="hljs-keyword">for</span> second_index, value <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(data):
+            <span class="hljs-keyword">if</span> first_index == <span class="hljs-number">0</span>:
+                sheet.write(first_index, second_index, value)
+            <span class="hljs-keyword">else</span>:
+                sheet.write(first_index, second_index, value)
+    workbook.save(file_path)
+
+
+<span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:
+    <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    constellation_list = [name_list]
+    <span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> kind_list:
+        constellation_list.append(extract_constellation_info(k))
+    write_to_csv(constellation_list, csv_file_path)
+    write_to_excel(constellation_list, excel_file_path)
+    print(<span class="hljs-string">&quot;数据写入完毕，请打开文件查看~&quot;</span>)

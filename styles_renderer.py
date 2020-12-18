@@ -26,13 +26,13 @@ class Cell:
 
 
 class StyleRenderer(mistune.HTMLRenderer):
-    def __init__(self, style_file):
+    def __init__(self, style_file, template_dir):
         super().__init__()
         self.config = configparser.ConfigParser()
         self.config.read(style_file, encoding='utf-8')
         self.items = self.config.items('style')
         # 创建一个包加载器对象(也可以使用PackageLoader包加载器的方式加载)
-        self.env = Environment(loader=FileSystemLoader(os.path.join(os.getcwd(), 'template')))
+        self.env = Environment(loader=FileSystemLoader(template_dir))
         # 模板加载
         for item in self.items:
             key = item[0]
@@ -237,7 +237,16 @@ def escape_html(s):
     return escape(s)
 
 
-def render_article(content, style_ini_path):
-    render = StyleRenderer(os.path.join(os.getcwd(), style_ini_path))
+def render_article(content, style_ini_path, template_dir):
+    """
+    渲染文章
+
+    :param template_dir:
+    :param content: Markdown内容
+    :param style_ini_path:  配置文件路径
+    :param template_dir: 模板文件路径
+    :return: 渲染后带样式的HTML内容
+    """
+    render = StyleRenderer(os.path.join(os.getcwd(), style_ini_path), template_dir)
     content_result = mistune.create_markdown(renderer=render, plugins=[plugin_table])(content)
     return render.background(text='{}{}{}'.format(render.header(), content_result, render.footer()))
