@@ -108,3 +108,6 @@ ENV/
 
 /article/
 /styles/custom/
+/template/custom/
+/wash/in.html
+/wash/out.html

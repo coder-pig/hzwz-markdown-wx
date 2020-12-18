@@ -27,15 +27,10 @@ def write_file(content, file_path):
 
 # 过滤无用属性值
 pattern_str_list = [
-    r'data-ratio=".*?"',
-    r'data-tool=".*?"',
-    r'data-tools=".*?"',
-    r'data-website=".*?"',
-    r'data-id=".*?"',
+    r'data-.*?=".*?"',
     r'class=".*?"',
     r'id=".*?"',
-    r'data-mpa-category=".*?"',
-    r'data-mpa-template=".*?"',
+    r'data-mpa-.*?=".*?"',
     r'mpa-from-tpl=".*?"',
     r'data-mpa-powered-by=".*?"',
     r'powered-by=".*?"',
