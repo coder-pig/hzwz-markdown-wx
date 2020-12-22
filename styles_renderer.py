@@ -16,6 +16,7 @@ from mistune.plugins import plugin_table
 from jinja2 import Environment, FileSystemLoader
 from highlight.renderer_code import renderer_by_node
 from lxml import etree
+import random
 
 
 # 表格单元格
@@ -30,6 +31,8 @@ class StyleRenderer(mistune.HTMLRenderer):
         super().__init__()
         self.config = configparser.ConfigParser()
         self.config.read(style_file, encoding='utf-8')
+        self.random_color_list = ['213, 15, 37', '51, 105, 232', '238, 178, 17', '15, 157, 88']
+        self.current_color_index = -1  # 当前颜色下标
         self.items = self.config.items('style')
         # 创建一个包加载器对象(也可以使用PackageLoader包加载器的方式加载)
         self.env = Environment(loader=FileSystemLoader(template_dir))
@@ -92,17 +95,21 @@ class StyleRenderer(mistune.HTMLRenderer):
                 return "<h{}>{}</h{}><br>".format(level, text, level)
         elif level == 2:
             if self.h2_template is not None:
-                return self.h2_template.render(text=text)
+                if self.current_color_index != -1:
+                    self.current_color_index = (self.current_color_index + 1) % len(self.random_color_list)
+                else:
+                    self.current_color_index = 0
+                return self.h2_template.render(text=text, color=self.random_color_list[self.current_color_index])
             else:
                 return "<h{}>{}</h{}><br>".format(level, text, level)
         elif level == 3:
             if self.h3_template is not None:
-                return self.h3_template.render(text=text)
+                return self.h3_template.render(text=text, color=self.random_color_list[self.current_color_index])
             else:
                 return "<h{}>{}</h{}><br>".format(level, text, level)
         elif level == 4:
             if self.h4_template is not None:
-                return self.h4_template.render(text=text)
+                return self.h4_template.render(text=text, color=self.random_color_list[self.current_color_index])
             else:
                 return "<h{}>{}</h{}><br>".format(level, text, level)
         else:
@@ -183,17 +190,22 @@ class StyleRenderer(mistune.HTMLRenderer):
     # 表格
     def table(self, text):
         if self.table_template is not None:
+            print(text)
             table_selector = etree.HTML(text)
             ths = table_selector.xpath('//tr/th')
             tds = table_selector.xpath('//tr/td')
             th_cell_list = []
             for index, value in enumerate(ths):
-                style = value.attrib.get('style')[11:]
+                style = value.attrib.get('style')
+                if style is not None:
+                    style = style[11:]
                 text = value.text
                 th_cell_list.append(Cell(text, style))
             td_cell_list = []
             for index, value in enumerate(tds):
-                style = value.attrib.get('style')[11:]
+                style = value.attrib.get('style')
+                if style is not None:
+                    style = style[11:]
                 text = value.text
                 td_cell_list.append(Cell(text, style))
             return self.table_template.render(row_count=len(ths), header_list=th_cell_list, detail_list=td_cell_list)
@@ -220,6 +232,10 @@ class StyleRenderer(mistune.HTMLRenderer):
             return self.background_template.render(text=text)
         else:
             return text
+
+    # 下划线
+    def thematic_break(self):
+        return ''
 
 
 def escape(s, quote=True):

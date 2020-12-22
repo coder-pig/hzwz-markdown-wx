@@ -30,6 +30,7 @@ def is_dir_existed(file_path, mkdir=True, is_recreate=False):
         else:
             if is_recreate:
                 delete_file(file_path)
+                os.makedirs(file_path)
     else:
         return os.path.exists(file_path)
 
