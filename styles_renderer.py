@@ -190,7 +190,6 @@ class StyleRenderer(mistune.HTMLRenderer):
     # 表格
     def table(self, text):
         if self.table_template is not None:
-            print(text)
             table_selector = etree.HTML(text)
             ths = table_selector.xpath('//tr/th')
             tds = table_selector.xpath('//tr/td')

@@ -1,9 +1,20 @@
-apply plugin: <span class="hljs-string">&#x27;kotlin-android&#x27;</span>
-apply plugin: <span class="hljs-string">&#x27;kotlin-android-extensions&#x27;</span>
+<span class="hljs-keyword">data</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Person</span></span>(
+    <span class="hljs-keyword">var</span> id: <span class="hljs-built_in">Int</span>,
+    <span class="hljs-keyword">var</span> name: String,
+    <span class="hljs-keyword">var</span> age: <span class="hljs-built_in">Int</span>
+)
 
-...
-
-dependencies {
-    ...
-    implementation<span class="hljs-string">&quot;org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version&quot;</span>
+<span class="hljs-function"><span class="hljs-keyword">fun</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> {
+    <span class="hljs-keyword">val</span> p = Person(<span class="hljs-number">1</span>, <span class="hljs-string">&quot;Pig&quot;</span>, <span class="hljs-number">18</span>)
+    println(<span class="hljs-string">&quot;<span class="hljs-variable">$p</span>&quot;</span>)   <span class="hljs-comment">// 输出结果：Person(id=1, name=Pig, age=18)</span>
+    p.also {
+        it.name = <span class="hljs-string">&quot;CoderPig&quot;</span>
+        it.age = <span class="hljs-number">20</span> 
+    }
+    println(<span class="hljs-string">&quot;<span class="hljs-variable">$p</span>&quot;</span>)   <span class="hljs-comment">// 输出结果：Person(id=1, name=CoderPig, age=20)</span>
+    p.apply {
+        name = <span class="hljs-string">&quot;Jay&quot;</span>
+        age = <span class="hljs-number">27</span>
+    }
+    println(<span class="hljs-string">&quot;<span class="hljs-variable">$p</span>&quot;</span>)   <span class="hljs-comment">// 输出结果：Person(id=1, name=Jay, age=27)</span>
 }

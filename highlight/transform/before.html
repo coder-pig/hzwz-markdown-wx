@@ -1,9 +1,20 @@
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
+data class Person(
+    var id: Int,
+    var name: String,
+    var age: Int
+)
 
-...
-
-dependencies {
-    ...
-    implementation"org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+fun main() {
+    val p = Person(1, "Pig", 18)
+    println("$p")   // 输出结果：Person(id=1, name=Pig, age=18)
+    p.also {
+        it.name = "CoderPig"
+        it.age = 20 
+    }
+    println("$p")   // 输出结果：Person(id=1, name=CoderPig, age=20)
+    p.apply {
+        name = "Jay"
+        age = 27
+    }
+    println("$p")   // 输出结果：Person(id=1, name=Jay, age=27)
 }
