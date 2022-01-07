@@ -9,14 +9,15 @@
 -------------------------------------------------
 """
 import configparser
-import os
 import html
+import os
+
 import mistune
-from mistune.plugins import plugin_table
 from jinja2 import Environment, FileSystemLoader
-from highlight.renderer_code import renderer_by_node
 from lxml import etree
-import random
+from mistune.plugins import plugin_table
+
+from highlight.renderer_code import renderer_by_node
 
 
 # 表格单元格
