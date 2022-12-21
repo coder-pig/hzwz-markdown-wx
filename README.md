@@ -9,9 +9,11 @@
 
 <p align="center" style="margin: 30px 0 35px;">🐭 尾汁Markdown转换工具</p>
 
-**`hzwz-markdown`** 是一款基于**Python**实现的，用于 `将Markdown文件转换成带样式的微信公众号文章HTML` 的工具。<br>
+**`hzwz-markdown`** 是一款基于 **Python** 实现的，用于 **`将Markdown文件转换成带样式的微信公众号文章HTML`** 的工具。<br>
 
-如果你像笔者一样，用Markdown语法撰写文稿，然后用耗费大量时间，用**统一样式**对文章进行排版，最后发布到公号上，使用此工具，可以有效提高你的排版效率。<br>
+简单点说：**排版工具（Markdown → 公众号）**
+
+如果你和笔者一样，用 **Markdown语法** 撰写文稿，再用 **统一样式** 对文章进行排版，最后发布到公号上，使用此工具，可以有效提高你的排版效率。<br>
 
 网上提供的Markdown转换工具不少，如：<br>
 
@@ -20,30 +22,106 @@
 - **MPEditor**：[http://js8.in/mpeditor/][3]
 - **Markdown**：[https://www.mdnice.com/][4]
 
-先感谢下大佬们提供的工具，笔者在开发时复制了部分样式，如**Mac样式窗口**~真香<br>
-而在使用这些工具时，慢慢发现了两个问题：<br>
+先感谢下大佬们提供的工具，笔者在开发时复制了部分样式，如 **Mac样式窗口**（真香），而在使用这些工具时，发现了两个问题：<br>
 
-- ① **样式单一**：烂大街，有些支持定制，但要自己写CSS，不会前端谁顶得住啊；
-- ② **夹带私货**：要登录，要关注，要跳转，恶心心，我只是想转下文件，我TM...；
+- ① **样式单一**：烂大街，有些支持定制，但要自己写CSS，不会前端谁顶得住啊。
+- ② **夹带私货**：要登录，要关注，要跳转，恶心心，我只是想转下文件，TM搞那么复杂。
 
 遂有了自己写一个工具的想法，我的愿景：
 
 - ① **样式灵活**：样式我不会写，**偷** 我会啊，看到喜欢的公号样式直接偷，还有谁？
 - ② **简单易用**：用户通过尽可能简单的配置，一键完成转换，一劳永逸。
-- ③ **纯粹&可定制**：代码开源，没有私货，纯透明，会Python还能自行定制。
+- ③ **纯粹&可定制**：代码开源，没有私货，纯透明，如果懂点Python基础还能自行订制。
+
+---
 
 ## 0x1、使用前的准备工作
 
-- **Step 1**：通过Git把代码clone到本地，或是直接Download代码压缩包；
-- **Step 2**：**安装Python**，如何安装请自行百度，安装了的直接跳过；
-- **Step 3**：**安装Nodejs**，同样自行百度；
-- **Step 4**：通过**pip命令**安装用到的依赖库；
+### 一、把项目下载到本地
+
+可以直接调用 **git clone** 克隆项目，也可以直接Download代码压缩包
+
+### 二、下载安装Python与NodeJs
+
+Windows用户，直接到官网下载安装包exe，然后无脑下一步安装即可~
+
+- [Python官网](https://www.python.org/downloads/) 下个3.x的安装包
+- [NodeJs官网](https://nodejs.org/en/) 下个安装包(稳定版LTS就可以了)
+
+Mac用户，可以直接用brew直接安装
+
+```bash
+brew install python3
+
+// 查看可用node版本
+brew search node
+// 安装需要的版本
+brew install node@12
+```
+
+Linux用户，稍微繁琐一些，都需要编译安装，先是Python3
+
+```bash
+// 安装依赖
+sudo yum -y install zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gdbm-devel db4-devel libpcap-devel xz-devel libffi-devel
+
+// 下载安装包，如这里下载3.7.2版本
+wget https://www.python.org/ftp/python/3.7.2/Python-3.7.2.tgz
+
+// 解压缩安装包
+tar -zxvf Python-3.7.2.tgz 
+
+// 配置安装路径
+cd Python-3.7.2
+./configure prefix=/usr/local/python3
+
+// 编译安装Python3
+make && make install
+
+// 测试是否安装成功
+python3 -V
+pip3 -V
+```
+
+然后是Nodejs：
+
+```bash
+cd /usr/local
+mkdir nodejs
+cd nodejs
+wget https://nodejs.org/dist/v12.14.0/node-v12.14.0-darwin-x64.tar.gz
+
+// 解压及重命名
+tar zxvf node-v12.14.0-darwin-x64.tar.gz
+
+// 删除多余压缩包
+rm -rf node-v12.14.0-darwin-x64.tar.gz
+
+// 改名nodejs
+mv node-v12.14.0-darwin-x64/* /usr/local/nodejs
+
+// 建立软链接
+ln -s /usr/local/nodejs/bin/node /usr/local/bin
+ln -s /usr/local/nodejs/bin/npm /usr/local/bin
+
+// 测试是否安装成功
+node -v
+npm -v
+```
+
+如果以上方法走不通，建议善用搜索引擎~
+
+### 三、pip命令安装用到的依赖库
+
+直接执行下述命令安装 (Mac使用pip3)
 
 ```
 pip install -r requirements.txt
 ```
 
-## 0x2、怎么直接用？
+---
+
+## 0x2、怎么用？
 
 ### 1、准备下样式配置文件
 
