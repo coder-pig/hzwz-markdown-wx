@@ -119,6 +119,16 @@ npm -v
 pip install -r requirements.txt
 ```
 
+可能出现的错误：
+
+```
+ImportError: cannot import name ‘soft_unicode’ from 'markupsafe’
+
+# 解决方法：把已经安装的版本卸载，安装旧版本
+pip install markupsafe==2.0.1
+```
+
+
 ---
 
 ## 0x2、怎么用？
