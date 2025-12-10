@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+python-multipart
+lxml
+Jinja2
+mistune==2.0.0a4
+pygments
